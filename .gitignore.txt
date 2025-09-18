@@ -1,0 +1,23 @@
+# macOS system files
+.DS_Store
+.Trash/
+.localized
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs/temp
+*.log
+*.tmp
