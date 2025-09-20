@@ -93,6 +93,7 @@ def date_time_conversion(df, newcol):
 
 
 train_master = date_time_conversion(train_master, 'time')
+test_master = date_time_conversion(test_master, 'time')
 
 
 def month_num_conversion(df, colname):
@@ -103,7 +104,9 @@ def month_num_conversion(df, colname):
 
 
 train_master = month_num_conversion(train_master, 'timenew')
+test_master = month_num_conversion(test_master, 'timenew')
 train_master = train_master.sort_index()
+test_master = test_master.sort_index()
 
 
 def plot_rain_numfeat(df, x, y, plttype):
@@ -123,28 +126,7 @@ def plot_rain_numfeat(df, x, y, plttype):
 # plot_rain_numfeat(train_master,'Mean_vapour_pressure__hPa', 'Total_rainfall__mm', "line")
 # plot_rain_numfeat(train_master,'Mean_wind_speed__m_s', 'Total_rainfall__mm', "scatter")
 # plot_rain_numfeat(train_master, 'Mean_air_temperature__Deg_C', 'Total_rainfall__mm', 'linreg')
-
-
-rain_temp_humid = pd.DataFrame({"Rainfall (mm)": train_master['Total_rainfall__mm'],
-                                "Temperature (C)": train_master['Mean_air_temperature__Deg_C'],
-                                "Humidity (%)": train_master['Mean_9am_Humidity__percent']})
-rain_temp_humid = rain_temp_humid.fillna(rain_temp_humid['Rainfall (mm)'].mean())
-rain_temp_humid.plot(kind='scatter', x='Temperature (C)', y='Humidity (%)',
-                     alpha=0.5, s="Rainfall (mm)",
-                     label="Rainfall (mm)", cmap=plt.get_cmap("jet"),
-                     colorbar=False, sharex=False)
-# plt.show()
-
-
-rain_vap_sea = pd.DataFrame({"Rainfall (mm)": train_master['Total_rainfall__mm'],
-                             "Vapour Pressure (hPa)": train_master['Mean_vapour_pressure__hPa'],
-                             "Sea Level Pressure (hPa)": train_master['Mean_sea-level_pressure_at_9am__hPa']})
-rain_vap_sea = rain_vap_sea.fillna(rain_vap_sea['Rainfall (mm)'].mean())
-rain_vap_sea.plot(kind='scatter',x='Sea Level Pressure (hPa)',y='Vapour Pressure (hPa)',
-                  alpha=0.5,s="Rainfall (mm)", label="Rainfall (mm)",cmap=plt.get_cmap("jet"),
-                  colorbar=False, sharex=False)
-# plt.show()
-
+#
 
 # -------------------- DSIII.V: MAKING NEW FEATURES-------------------- #
 
@@ -247,36 +229,29 @@ else:
     train_master.to_csv("train_set_master.csv")
 
 
+test_master = add_cloudiness(test_master, 'Total_sunshine_hours__Hrs')
+test_master = add_seasons(test_master, 'month_num')
+test_master = add_dewpoint(test_master,'Mean_air_temperature__Deg_C', 'Mean_9am_Humidity__percent')
+test_master = add_enso(test_master, train_master)
+test_master = add_wind_direction(test_master, train_master, '43711__Wind__hourly.csv')
+test_master = direction_encoding(test_master, 'wind_direction')
+test_master.to_csv("test_set_master.csv")
+fpf = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum","test_set_master.csv" )
+if os.path.isfile(fpf):
+    pass
+else:
+    test_master.to_csv("test_set_master.csv")
+
 # -------------------- DSIII contd -------------------- #
 
-rain_speed_dir = pd.DataFrame({"Rainfall (mm)": train_master['Total_rainfall__mm'],
-                             "Wind cos (rad)": train_master['wind_cos'],
-                             "Wind sin (rad)": train_master['wind_sin']})
-rain_speed_dir = rain_speed_dir.fillna(rain_speed_dir['Rainfall (mm)'].mean())
-rain_speed_dir.plot(kind='scatter',x='Wind cos (rad)',y='Wind sin (rad)',
-                  alpha=0.5,s="Rainfall (mm)", c=train_master['Mean_wind_speed__m_s'],
-                  label="Rainfall (mm)",cmap=plt.get_cmap("jet"),
-                  colorbar=True, sharex=False)
-# plt.show()
 
-rain_speed_hum = pd.DataFrame({"Rainfall (mm)": train_master['Total_rainfall__mm'],
-                             "Wind speed": train_master['Mean_wind_speed__m_s'],
-                             "Wind humidity": train_master['Mean_9am_Humidity__percent']})
-rain_speed_hum = rain_speed_hum.fillna(rain_speed_hum['Rainfall (mm)'].mean())
-rain_speed_hum.plot(kind='scatter',x='Wind speed',y='Wind humidity',
-                  alpha=0.5,s="Rainfall (mm)",c=train_master["ENSO num"],
-                  label="Rainfall (mm)",cmap=plt.get_cmap("jet"),
-                  colorbar=True, sharex=False)
-# plt.show()
-
-
-def colormap(df, x, y, s, c=None, color=False):
+def colormap(df, x, y, s, cmt, c=None, color=False):
     plot_df = pd.DataFrame({s:df[s],
                             x:df[x],
                             y:df[y]})
     plot_df = plot_df.fillna(plot_df[s].mean())
     if c is not None:
-        c_plot = c
+        c_plot = df[c]
     else:
         c_plot = None
 
@@ -285,8 +260,9 @@ def colormap(df, x, y, s, c=None, color=False):
     else:
         color_plot = False
     plot_df.plot(kind='scatter',x=x,y=y,alpha=0.5,s=s,
-                 c=c_plot,label=y,cmap=plt.get_cmap("jet"),
+                 c=c_plot,label=s,cmap=plt.get_cmap(cmt),
                  colorbar=color_plot, sharex=False)
+    plt.show()
 
 
 def plot_categorical(df, x, y, type):
@@ -300,7 +276,136 @@ def plot_categorical(df, x, y, type):
     plt.show()
 
 
-plot_categorical(train_master, 'ENSO cat', 'Total_rainfall__mm', "violin")
-plot_categorical(train_master, 'Seasons', 'Total_rainfall__mm', "box")
-plot_rain_numfeat(train_master, 'cloudiness','Total_rainfall__mm',"scatter")
-plot_rain_numfeat(train_master, 'dewpoint (degC)','Total_rainfall__mm',"scatter")
+# plot_categorical(train_master, 'ENSO cat', 'Total_rainfall__mm', "violin")
+# plot_categorical(train_master, 'Seasons', 'Total_rainfall__mm', "box")
+# plot_rain_numfeat(train_master, 'cloudiness','Total_rainfall__mm',"scatter")
+# plot_rain_numfeat(train_master, 'dewpoint (degC)','Total_rainfall__mm',"scatter")
+#
+# colormap(train_master,'Mean_wind_speed__m_s', 'Mean_9am_Humidity__percent',
+#          'Total_rainfall__mm',"jet",'dewpoint (degC)',color=True)
+# colormap(train_master,'Mean_air_temperature__Deg_C', 'Mean_9am_Humidity__percent',
+#          'Total_rainfall__mm',"jet", c=None,color=False)
+# colormap(train_master,'wind_cos', 'wind_sin','Total_rainfall__mm',"jet"
+#          ,'Mean_wind_speed__m_s',True)
+
+
+# -------------------- DSIV -------------------- #
+
+train_master_num = train_master.select_dtypes(include='number')
+train_master_cat = train_master.select_dtypes(exclude='number')
+test_master_num = test_master.select_dtypes(include='number')
+test_master_cat = test_master.select_dtypes(exclude='number')
+
+
+def impute_all(train_num, train_cat, test_num, test_cat):
+    from sklearn.impute import SimpleImputer
+    num_imp = SimpleImputer(strategy='median')
+    cat_imp = SimpleImputer(strategy='most_frequent')
+    train_num = pd.DataFrame(num_imp.fit_transform(train_num),columns=train_num.columns,
+                             index=train_num.index)
+    train_cat = pd.DataFrame(cat_imp.fit_transform(train_cat), columns=train_cat.columns,
+                             index=train_cat.index)
+    test_num = pd.DataFrame(num_imp.transform(test_num), columns=test_num.columns,
+                            index=test_num.index)
+    test_cat = pd.DataFrame(cat_imp.transform(test_cat), columns=test_cat.columns,
+                            index=test_cat.index)
+
+    return train_num, train_cat, test_num, test_cat
+
+
+train_master_num, train_master_cat, test_master_num, test_master_cat = impute_all(train_master_num, train_master_cat,
+                                                                                  test_master_num, test_master_cat)
+
+
+def drop_unwanted(train_num, train_cat, test_num, test_cat, feat_name):
+    if feat_name in train_num.columns:
+        train_num = train_num.drop(feat_name, axis=1)
+    if feat_name in train_cat.columns:
+        train_cat = train_cat.drop(feat_name, axis=1)
+    if feat_name in test_num.columns:
+        test_num = test_num.drop(feat_name, axis=1)
+    if feat_name in test_cat.columns:
+        test_cat = test_cat.drop(feat_name, axis=1)
+    return train_num, train_cat, test_num, test_cat,
+
+
+train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
+                                                                                     test_master_num, test_master_cat,
+                                                                                     "Months")
+
+train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
+                                                                                     test_master_num, test_master_cat,
+                                                                                     "time")
+
+
+def encoding(train_cat, test_cat):
+    from sklearn.preprocessing import OneHotEncoder
+    ohc = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
+    train_cat = pd.DataFrame(ohc.fit_transform(train_cat),
+                             columns=ohc.get_feature_names_out(),index=train_cat.index)
+    test_cat = pd.DataFrame(ohc.transform(test_cat),
+                            columns=ohc.get_feature_names_out(),index=test_cat.index)
+    return train_cat, test_cat
+
+
+train_master_cat, test_master_cat = encoding(train_master_cat, test_master_cat)
+
+
+def cyclic_scaling(train_num, test_num, col_name):
+    train_num[col_name + " sin"] = np.sin(2*np.pi*train_num[col_name]/12)
+    train_num[col_name + " cos"] = np.cos(2 * np.pi * train_num[col_name] / 12)
+    test_num[col_name + " sin"] = np.sin(2*np.pi*test_num[col_name]/12)
+    test_num[col_name + " cos"] = np.cos(2 * np.pi * test_num[col_name] / 12)
+
+    return train_num, test_num
+
+
+train_master_num, test_master_num = cyclic_scaling(train_master_num, test_master_num, 'month_num')
+pass
+
+
+def variance(train_num,  test_num):
+    from sklearn.feature_selection import VarianceThreshold
+    low_var_remover = VarianceThreshold()
+    train_num = pd.DataFrame(low_var_remover.fit_transform(train_num),
+                             columns=train_num.columns, index=train_num.index)
+    test_num = pd.DataFrame(low_var_remover.transform(test_num),
+                             columns=test_num.columns, index=test_num.index)
+    return train_num, test_num
+
+
+train_master_num, test_master_num = variance(train_master_num, test_master_num)
+
+
+def stdscale(train_num, test_num, feat_list):
+    from sklearn.preprocessing import StandardScaler
+    train_num_scale = train_num[feat_list]
+    test_num_scale = test_num[feat_list]
+    scaler = StandardScaler()
+    train_num_scale = pd.DataFrame(scaler.fit_transform(train_num_scale),
+                                   columns=train_num_scale.columns,
+                                   index=train_num_scale.index)
+    test_num_scale = pd.DataFrame(scaler.transform(test_num_scale),
+                                   columns=test_num_scale.columns,
+                                   index=test_num_scale.index)
+    train_num.update(train_num_scale)
+    test_num.update(test_num_scale)
+    return train_num, test_num
+
+
+feats_to_scale = ["Mean_sea-level_pressure_at_9am__hPa", "Total_sunshine_hours__Hrs", "cloudiness"]
+train_master_num, test_master_num = stdscale(train_master_num, test_master_num, feats_to_scale)
+
+
+def combine(train_num, train_cat, test_num, test_cat):
+    train_final = pd.merge(train_num, train_cat, left_index=True, right_index=True)
+    test_final = pd.merge(test_num, test_cat, left_index=True, right_index=True)
+    return train_final, test_final
+
+
+train_master, test_master = combine(train_master_num, train_master_cat, test_master_num, test_master_cat)
+
+
+
+
+
