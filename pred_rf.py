@@ -341,14 +341,14 @@ def drop_unwanted(train_num, train_cat, test_num, test_cat, feat_name):
         test_cat = test_cat.drop(feat_name, axis=1)
     return train_num, train_cat, test_num, test_cat,
 
-#
+
 # train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
 #                                                                                      test_master_num, test_master_cat,
 #                                                                                      "Months")
 #
 # train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
 #                                                                                      test_master_num, test_master_cat,
-#                                                                                      "time")
+#                                                                                      "time"
 
 
 def encoding(train_cat, test_cat):
@@ -434,6 +434,88 @@ def pipeline(train, test, col_name_sc,drop_feat,feat_list):
 
 train_master_final, test_master_final = pipeline(train_master, test_master,["month_num"]
                                                  ,["Months", "time","wind_direction", "timenew"], feats_to_scale)
+
+
+# -------------------- DSV -------------------- #
+
+X_train = train_master_final.drop('Total_rainfall__mm', axis=1)
+X_test = test_master_final.drop('Total_rainfall__mm', axis=1)
+y_train = train_master_final['Total_rainfall__mm']
+y_test = test_master_final['Total_rainfall__mm']
+
+from sklearn.linear_model import Ridge, LinearRegression
+from sklearn import linear_model
+from sklearn.model_selection import cross_val_score, LeaveOneOut
+
+ridge_score = cross_val_score(linear_model.Ridge(),X_train, np.ravel(y_train),
+                              scoring='neg_mean_squared_error',cv=10)
+ridge_rmse = np.sqrt(-ridge_score)
+ridge_rmse_mean = ridge_rmse.mean()
+ridge_rmse_std = ridge_rmse.std()
+
+from sklearn.ensemble import RandomForestRegressor
+
+rfr_score = cross_val_score(RandomForestRegressor(), X_train, np.ravel(y_train),
+                            scoring='neg_mean_squared_error', cv=10)
+rfr_rmse = np.sqrt(-rfr_score)
+rfr_rmse_mean = rfr_rmse.mean()
+rfr_rmse_std = rfr_rmse.std()
+
+from xgboost import XGBRegressor
+
+xgb_score = cross_val_score(XGBRegressor(max_depth=5), X_train, np.ravel(y_train),
+                            scoring='neg_mean_squared_error', cv=10)
+xgb_rmse = np.sqrt(-xgb_score)
+xgb_rmse_mean = xgb_rmse.mean()
+xgb_rmse_std = xgb_rmse.std()
+
+from sklearn.svm import SVR
+
+svr_score = cross_val_score(SVR(), X_train, np.ravel(y_train),
+                            scoring='neg_mean_squared_error', cv=10)
+svr_rmse = np.sqrt(-svr_score)
+svr_rmse_mean = svr_rmse.mean()
+svr_std = svr_rmse.std()
+
+from sklearn.neighbors import KNeighborsRegressor
+
+kn_score = cross_val_score(KNeighborsRegressor(), X_train, np.ravel(y_train),
+                           scoring='neg_mean_squared_error', cv=10)
+kn_rmse = np.sqrt(-kn_score)
+kn_rmse_mean = kn_rmse.mean()
+kn_rmse_std = kn_rmse.std()
+
+
+# -------------------- DSVI -------------------- #
+
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {'n_estimators': [100],
+    'max_depth': [None],
+    'max_features': ['sqrt', 'log2', 1],
+    'min_samples_split': [15],
+    'min_samples_leaf': [7,8],
+    'bootstrap': [True]}
+
+rfr = RandomForestRegressor()
+
+gs_rfr = GridSearchCV(rfr, param_grid, cv=10,scoring='neg_mean_squared_error')
+gs_rfr.fit(X_train,y_train)
+print("best score:", gs_rfr.best_score_)
+print("best params:", gs_rfr.best_params_)
+
+svr_grid = {"C":[1, 10, 100],
+            "epsilon":[0.01, 0.1, 1, 10],
+                   "gamma":['scale', 'auto', 0.01, 0.1, 1],
+            "kernel":['rbf']}
+
+svr_gs = GridSearchCV(SVR(), svr_grid, cv=10, scoring='neg_mean_squared_error')
+svr_gs.fit(X_train, y_train)
+print("best score:", svr_gs.best_score_)
+print("best params:", svr_gs.best_params_)
+
+
+# -------------------- DSVII -------------------- #
 
 
 
