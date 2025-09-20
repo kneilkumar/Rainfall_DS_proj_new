@@ -291,10 +291,23 @@ def plot_categorical(df, x, y, type):
 
 # -------------------- DSIV -------------------- #
 
-train_master_num = train_master.select_dtypes(include='number')
-train_master_cat = train_master.select_dtypes(exclude='number')
-test_master_num = test_master.select_dtypes(include='number')
-test_master_cat = test_master.select_dtypes(exclude='number')
+# train_master_num = train_master.select_dtypes(include='number')
+# train_master_cat = train_master.select_dtypes(exclude='number')
+# test_master_num = test_master.select_dtypes(include='number')
+# test_master_cat = test_master.select_dtypes(exclude='number')
+
+
+def split_by_type(train, test):
+    train_num = train.select_dtypes(include='number')
+    train_cat = train.select_dtypes(exclude='number')
+    test_num = test.select_dtypes(include='number')
+    test_cat = test.select_dtypes(exclude='number')
+
+    return train_num, train_cat, test_num, test_cat
+
+
+# train_master_num, train_master_cat, test_master_num, test_master_cat = split_by_type(train_master, test_master)
+# pass
 
 
 def impute_all(train_num, train_cat, test_num, test_cat):
@@ -313,8 +326,8 @@ def impute_all(train_num, train_cat, test_num, test_cat):
     return train_num, train_cat, test_num, test_cat
 
 
-train_master_num, train_master_cat, test_master_num, test_master_cat = impute_all(train_master_num, train_master_cat,
-                                                                                  test_master_num, test_master_cat)
+# train_master_num, train_master_cat, test_master_num, test_master_cat = impute_all(train_master_num, train_master_cat,
+#                                                                                   test_master_num, test_master_cat)
 
 
 def drop_unwanted(train_num, train_cat, test_num, test_cat, feat_name):
@@ -328,14 +341,14 @@ def drop_unwanted(train_num, train_cat, test_num, test_cat, feat_name):
         test_cat = test_cat.drop(feat_name, axis=1)
     return train_num, train_cat, test_num, test_cat,
 
-
-train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
-                                                                                     test_master_num, test_master_cat,
-                                                                                     "Months")
-
-train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
-                                                                                     test_master_num, test_master_cat,
-                                                                                     "time")
+#
+# train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
+#                                                                                      test_master_num, test_master_cat,
+#                                                                                      "Months")
+#
+# train_master_num, train_master_cat, test_master_num, test_master_cat = drop_unwanted(train_master_num, train_master_cat,
+#                                                                                      test_master_num, test_master_cat,
+#                                                                                      "time")
 
 
 def encoding(train_cat, test_cat):
@@ -348,7 +361,7 @@ def encoding(train_cat, test_cat):
     return train_cat, test_cat
 
 
-train_master_cat, test_master_cat = encoding(train_master_cat, test_master_cat)
+# train_master_cat, test_master_cat = encoding(train_master_cat, test_master_cat)
 
 
 def cyclic_scaling(train_num, test_num, col_name):
@@ -360,8 +373,7 @@ def cyclic_scaling(train_num, test_num, col_name):
     return train_num, test_num
 
 
-train_master_num, test_master_num = cyclic_scaling(train_master_num, test_master_num, 'month_num')
-pass
+# train_master_num, test_master_num = cyclic_scaling(train_master_num, test_master_num, 'month_num')
 
 
 def variance(train_num,  test_num):
@@ -374,7 +386,7 @@ def variance(train_num,  test_num):
     return train_num, test_num
 
 
-train_master_num, test_master_num = variance(train_master_num, test_master_num)
+# train_master_num, test_master_num = variance(train_master_num, test_master_num)
 
 
 def stdscale(train_num, test_num, feat_list):
@@ -394,7 +406,7 @@ def stdscale(train_num, test_num, feat_list):
 
 
 feats_to_scale = ["Mean_sea-level_pressure_at_9am__hPa", "Total_sunshine_hours__Hrs", "cloudiness"]
-train_master_num, test_master_num = stdscale(train_master_num, test_master_num, feats_to_scale)
+# train_master_num, test_master_num = stdscale(train_master_num, test_master_num, feats_to_scale)
 
 
 def combine(train_num, train_cat, test_num, test_cat):
@@ -403,9 +415,25 @@ def combine(train_num, train_cat, test_num, test_cat):
     return train_final, test_final
 
 
-train_master, test_master = combine(train_master_num, train_master_cat, test_master_num, test_master_cat)
+# train_master, test_master = combine(train_master_num, train_master_cat, test_master_num, test_master_cat)
 
 
+def pipeline(train, test, col_name_sc,drop_feat,feat_list):
+    train_num, train_cat, test_num, test_cat = split_by_type(train, test)
+    train_num, train_cat, test_num, test_cat = impute_all(train_num, train_cat, test_num, test_cat)
+    for unwanted in drop_feat:
+        train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat, unwanted)
+    train_cat, test_cat = encoding(train_cat, test_cat)
+    for col in col_name_sc:
+        train_num, test_num = cyclic_scaling(train_num, test_num, col)
+    train_num, test_num = variance(train_num,  test_num)
+    train_num, test_num = stdscale(train_num, test_num, feat_list)
+    train_final, test_final = combine(train_num, train_cat, test_num, test_cat)
+    return train_final, test_final
+
+
+train_master_final, test_master_final = pipeline(train_master, test_master,["month_num"]
+                                                 ,["Months", "time","wind_direction", "timenew"], feats_to_scale)
 
 
 
