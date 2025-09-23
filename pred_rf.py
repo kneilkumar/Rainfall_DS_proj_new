@@ -11,41 +11,30 @@ sns.set()
 
 
 def load_data(file_name_list):
-    master_df = pd.DataFrame()
-    i = 17
-    time_file = pd.read_csv(file_name_list[0])
-    master_df['Month'] = time_file['PERIOD']
-    master_df['Year'] = time_file['YEAR']
-    for files in file_name_list:
-        while files[i] != '.':
-            i += 1
-        feat_name = files[16:i]
-        file_df = pd.read_csv(files)
-        master_df[feat_name] = file_df['STATS_VALUE']
-        i = 17
-    full_path_file = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum", "data_master_copy.csv")
-    if os.path.isfile(full_path_file):
+    master_df = pd.read_csv(file_name_list[0],nrows=60110)
+    for files in file_name_list[1:]:
+        df = pd.read_csv(files, nrows=60110)
+        master_df = pd.concat([master_df, df], axis=1)
+    fpf = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum", "master_hr.csv")
+    if os.path.isfile(fpf):
         pass
     else:
-        master_df.to_csv("data_master_copy.csv")
+        master_df.to_csv("master_hr.csv")
     return master_df
 
 
 # LOAD DATA
-
-data = ['43711__monthly__Mean_9am_Humidity__percent.csv',
-        '43711__monthly__Mean_air_temperature__Deg_C.csv',
-        '43711__monthly__Mean_sea-level_pressure_at_9am__hPa.csv',
-        '43711__monthly__Mean_vapour_pressure__hPa.csv',
-        '43711__monthly__Mean_wind_speed__m_s.csv',
-        '43711__monthly__Total_rainfall__mm.csv',
-        '43711__monthly__Total_sunshine_hours__Hrs.csv']
+data = ['43711__Rain__hourly.csv',
+        '43711__Sunshine__hourly.csv',
+        '43711__Temperature__hourly.csv',
+        '43711__Wind__hourly.csv',
+        '43711__Pressure__hourly.csv',]
 
 data_df = load_data(data)
 
 # SAMPLE TEST SET FROM DATA
 
-data_df['value_cat'] = np.ceil(data_df['Total_rainfall__mm'] / 15)
+data_df['value_cat'] = np.ceil(data_df['Rainfall [mm]'])
 data_df['value_cat'].where(data_df['value_cat'] < 5, 5.0, inplace=True)
 # sns.histplot(data_df['value_cat'], kde=False)
 # plt.show()
@@ -67,46 +56,44 @@ print(check_sampling.head())
 for val in (train_master, test_master):
     val.drop(["value_cat"], axis=1, inplace=True)
 
-for name in ["test_set_master.csv", "train_set_master.csv"]:
+for name in ["test_set_hr.csv", "train_set_hr.csv"]:
     fpf = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum", name)
     if os.path.isfile(fpf):
         pass
     else:
-        train_master.to_csv("train_set_master.csv")
-        test_master.to_csv("test_set_master.csv")
+        train_master.to_csv("train_set_hr.csv")
+        test_master.to_csv("test_set_hr.csv")
 
 train_master.info()
+train_master = train_master.sort_index()
+test_master = test_master.sort_index()
 
 # -------------------- DSIII -------------------- #
 
 from datetime import datetime
 
 
+def drop_duplicate_cols(df):
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
+
+train_master = drop_duplicate_cols(train_master)
+test_master = drop_duplicate_cols(test_master)
+
+
 def date_time_conversion(df, newcol):
-    df[newcol] = df['Month'] + df['Year'].astype(str)
-    old_times = list(df[newcol])
-    new_times = [datetime.strptime(time, "%B%Y").timestamp() for time in old_times]
-    new_time = pd.DataFrame({newcol + "new": new_times}, index=df.index)
-    df = pd.concat([df, new_time], axis=1)
-    df[newcol] = df['Month'] + ' ' + df['Year'].astype(str)
+    df['datetimes'] = pd.to_datetime(df[newcol])
+    df['months'] = df['datetimes'].dt.month
+    df['month names'] = df['datetimes'].dt.month_name()
+    df['years'] = df['datetimes'].dt.year
+    df['days'] = df['datetimes'].dt.dayofyear
+    df['hour of day'] = df['datetimes'].dt.hour
     return df
 
 
-train_master = date_time_conversion(train_master, 'time')
-test_master = date_time_conversion(test_master, 'time')
-
-
-def month_num_conversion(df, colname):
-    df = pd.concat([df, pd.DataFrame({'month_num': [datetime.fromtimestamp(timestamp).month
-                                                                    for timestamp in list(df[colname])]},
-                                                                    index=df.index)], axis=1)
-    return df
-
-
-train_master = month_num_conversion(train_master, 'timenew')
-test_master = month_num_conversion(test_master, 'timenew')
-train_master = train_master.sort_index()
-test_master = test_master.sort_index()
+train_master = date_time_conversion(train_master, 'Observation time UTC')
+test_master = date_time_conversion(test_master, 'Observation time UTC')
 
 
 def plot_rain_numfeat(df, x, y, plttype):
@@ -114,28 +101,26 @@ def plot_rain_numfeat(df, x, y, plttype):
         rain_feat = sns.lineplot(data=df, x=x, y=y)
     elif plttype.lower() == "scatter":
         rain_feat = sns.scatterplot(data=df, x=x, y=y)
+    elif plttype.lower() == 'hist':
+        rain_feat = sns.histplot(data=df, x=x, y=y)
     else:
         rain_feat = sns.regplot(data=df, x=x, y=y)
     rain_feat.tick_params(axis='x', rotation=270)
     plt.show()
 
 
-# plot_rain_numfeat(train_master, 'time', 'Total_rainfall__mm', "line")
-# plot_rain_numfeat(train_master, 'Mean_9am_Humidity__percent', 'Total_rainfall__mm', "line")
-# plot_rain_numfeat(train_master,'Mean_sea-level_pressure_at_9am__hPa', 'Total_rainfall__mm', "line")
-# plot_rain_numfeat(train_master,'Mean_vapour_pressure__hPa', 'Total_rainfall__mm', "line")
-# plot_rain_numfeat(train_master,'Mean_wind_speed__m_s', 'Total_rainfall__mm', "scatter")
-# plot_rain_numfeat(train_master, 'Mean_air_temperature__Deg_C', 'Total_rainfall__mm', 'linreg')
+# plot_rain_numfeat(train_master, 'datetimes', 'Rainfall [mm]', "line")
+# plot_rain_numfeat(train_master, 'Mean Relative Humidity [percent]', 'Rainfall [mm]', "line")
+# plot_rain_numfeat(train_master,'Mean sea level pressure [Hpa]', 'Rainfall [mm]', "line")
+# plot_rain_numfeat(train_master,'Station level pressure', 'Rainfall [mm]', "line")
+# plot_rain_numfeat(train_master,'Speed [m/s]', 'Rainfall [mm]', "hist")
+# plot_rain_numfeat(train_master, 'Mean Temperature [Deg C]', 'Rainfall [mm]', 'linreg')
 #
 
 # -------------------- DSIII.V: MAKING NEW FEATURES-------------------- #
 
 def add_cloudiness(df, colname):
-    clouds = [720 - vals
-                        if vals in [4,6,9,11] else
-                        744 - vals
-                        if vals in [1,3,5,7,8,10,12] else
-                        725.5 - vals for vals in np.array(df[colname])]
+    clouds = 1 - np.array(df[colname])
     cloudiness = pd.DataFrame({'cloudiness': clouds}, index=df.index)
     df = pd.concat([df, cloudiness], axis=1)
     return df
@@ -215,32 +200,32 @@ def direction_encoding(df, colname):
     return df
 
 
-train_master = add_cloudiness(train_master, 'Total_sunshine_hours__Hrs')
-train_master = add_seasons(train_master, 'month_num')
-train_master = add_dewpoint(train_master, 'Mean_air_temperature__Deg_C', 'Mean_9am_Humidity__percent')
-train_master = add_enso(train_master, test_master)
-train_master = add_wind_direction(train_master, test_master,'43711__Wind__hourly.csv')
-train_master = direction_encoding(train_master, 'wind_direction')
-train_master.to_csv("train_set_master.csv")
-fpf = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum","train_set_master.csv" )
+train_master = add_cloudiness(train_master, 'Sunshine [hrs]')
+train_master = add_seasons(train_master, 'months')
+train_master = add_dewpoint(train_master, 'Mean Temperature [Deg C]', 'Mean Relative Humidity [percent]')
+# train_master = add_enso(train_master, test_master)
+# train_master = add_wind_direction(train_master, test_master,'43711__Wind__hourly.csv')
+train_master = direction_encoding(train_master, 'Direction [deg T]')
+train_master.to_csv("train_set_hr.csv")
+fpf = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum","train_set_hr.csv" )
 if os.path.isfile(fpf):
     pass
 else:
-    train_master.to_csv("train_set_master.csv")
+    train_master.to_csv("train_set_hr.csv")
 
 
-test_master = add_cloudiness(test_master, 'Total_sunshine_hours__Hrs')
-test_master = add_seasons(test_master, 'month_num')
-test_master = add_dewpoint(test_master,'Mean_air_temperature__Deg_C', 'Mean_9am_Humidity__percent')
-test_master = add_enso(test_master, train_master)
-test_master = add_wind_direction(test_master, train_master, '43711__Wind__hourly.csv')
-test_master = direction_encoding(test_master, 'wind_direction')
-test_master.to_csv("test_set_master.csv")
-fpf = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum","test_set_master.csv" )
+test_master = add_cloudiness(test_master, 'Sunshine [hrs]')
+test_master = add_seasons(test_master, 'months')
+test_master = add_dewpoint(test_master,'Mean Temperature [Deg C]', 'Mean Relative Humidity [percent]')
+# test_master = add_enso(test_master, train_master)
+# test_master = add_wind_direction(test_master, train_master, '43711__Wind__hourly.csv')
+test_master = direction_encoding(test_master, 'Direction [deg T]')
+test_master.to_csv("test_set_hr.csv")
+fpf = os.path.join("/Users/neilkumar/Desktop/Python/Oceanum","test_set_hr.csv" )
 if os.path.isfile(fpf):
     pass
 else:
-    test_master.to_csv("test_set_master.csv")
+    test_master.to_csv("test_set_hr.csv")
 
 # -------------------- DSIII contd -------------------- #
 
@@ -309,6 +294,25 @@ def split_by_type(train, test):
 # train_master_num, train_master_cat, test_master_num, test_master_cat = split_by_type(train_master, test_master)
 # pass
 
+def lag(train_num, test_num, lags, feats):
+    for feat in feats:
+        for lag in lags:
+            train_num[f'{feat} lag: {str(lag)}'] = train_num[feat].shift(lag)
+            test_num[f'{feat} lag: {str(lag)}'] = test_num[feat].shift(lag)
+            train_num[f'{feat} lag: {str(lag)}'] = train_num[f'{feat} lag: {str(lag)}'].ffill()
+            test_num[f'{feat} lag: {str(lag)}'] = test_num[f'{feat} lag: {str(lag)}'].ffill()
+    return train_num, test_num
+
+
+def rolling_avgs(train_num, test_num, windows, feats):
+    for feat in feats:
+        for window in windows:
+            train_num[f"{window} hr rolling avg {feat}"] = train_num[feat].rolling(window=window, min_periods=1).mean().shift(1)
+            test_num[f"{window} hr rolling avg {feat}"] = test_num[feat].rolling(window=window, min_periods=1).mean().shift(1)
+            train_num[f"{window} hr rolling avg {feat}"] = train_num[f"{window} hr rolling avg {feat}"].ffill()
+            test_num[f"{window} hr rolling avg {feat}"] = test_num[f"{window} hr rolling avg {feat}"].ffill()
+    return train_num, test_num
+
 
 def impute_all(train_num, train_cat, test_num, test_cat):
     from sklearn.impute import SimpleImputer
@@ -364,12 +368,12 @@ def encoding(train_cat, test_cat):
 # train_master_cat, test_master_cat = encoding(train_master_cat, test_master_cat)
 
 
-def cyclic_scaling(train_num, test_num, col_name):
-    train_num[col_name + " sin"] = np.sin(2*np.pi*train_num[col_name]/12)
-    train_num[col_name + " cos"] = np.cos(2 * np.pi * train_num[col_name] / 12)
-    test_num[col_name + " sin"] = np.sin(2*np.pi*test_num[col_name]/12)
-    test_num[col_name + " cos"] = np.cos(2 * np.pi * test_num[col_name] / 12)
-
+def cyclic_scaling(train_num, test_num, col_name, periods):
+    for period in periods:
+        train_num[col_name + " sin"] = np.sin(2 * np.pi * train_num[col_name] / period)
+        train_num[col_name + " cos"] = np.cos(2 * np.pi * train_num[col_name] / period)
+        test_num[col_name + " sin"] = np.sin(2 * np.pi * test_num[col_name] / period)
+        test_num[col_name + " cos"] = np.cos(2 * np.pi * test_num[col_name] / period)
     return train_num, test_num
 
 
@@ -405,7 +409,7 @@ def stdscale(train_num, test_num, feat_list):
     return train_num, test_num
 
 
-feats_to_scale = ["Mean_sea-level_pressure_at_9am__hPa", "Total_sunshine_hours__Hrs", "cloudiness"]
+feats_to_scale = ["Station level pressure", "Mean sea level pressure [Hpa]", "Sunshine [hrs]", "cloudiness"]
 # train_master_num, test_master_num = stdscale(train_master_num, test_master_num, feats_to_scale)
 
 
@@ -418,101 +422,130 @@ def combine(train_num, train_cat, test_num, test_cat):
 # train_master, test_master = combine(train_master_num, train_master_cat, test_master_num, test_master_cat)
 
 
-def pipeline(train, test, col_name_sc,drop_feat,feat_list):
+def pipeline(train, test, col_name_sc,drop_feat,feat_list, periods, lag_feat, rolling_feat):
     train_num, train_cat, test_num, test_cat = split_by_type(train, test)
+    train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"Deficit [mm]")
+    train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"Runoff [mm]")
+    train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"Data source (water balance)")
+    train_num, test_num = lag(train_num, test_num, [1,2,3,6,12,24], lag_feat)
+    train_num, test_num = rolling_avgs(train_num, test_num, [3,6,12,24], rolling_feat)
     train_num, train_cat, test_num, test_cat = impute_all(train_num, train_cat, test_num, test_cat)
     for unwanted in drop_feat:
         train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat, unwanted)
-    train_cat, test_cat = encoding(train_cat, test_cat)
+    train_cat, test_cat = encoding(train_cat.drop('month names', axis=1), test_cat.drop('month names', axis=1))
     for col in col_name_sc:
-        train_num, test_num = cyclic_scaling(train_num, test_num, col)
+        train_num, test_num = cyclic_scaling(train_num, test_num, col, periods)
     train_num, test_num = variance(train_num,  test_num)
     train_num, test_num = stdscale(train_num, test_num, feat_list)
+    train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"hour of day")
+    train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"months")
+    train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"days")
+    train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"month names")
     train_final, test_final = combine(train_num, train_cat, test_num, test_cat)
+
     return train_final, test_final
 
 
-train_master_final, test_master_final = pipeline(train_master, test_master,["month_num"]
-                                                 ,["Months", "time","wind_direction", "timenew"], feats_to_scale)
+drop_list = ["Frequency [D/H]",
+             "Data Source (rainfall)",
+             "PERIOD [hrs]",
+             "Data Source",
+             "Data Source (max temp)",
+             "Data Source (min temp)",
+             "Grass Temperature [Deg C]",
+             "Data Source (grass temp)",
+             "Period (max temp)",
+             "Period (min temp)",
+             "Period (grass temp)",
+             "Period (mean temp)",
+             "Data Source (mean temp)",
+             "Data Source (station level pressure)",
+             "Direction [deg T]",
+             "Data Source (mean sea level pressure)",
+             "datetimes",
+             "Deficit [mm]", "Runoff [mm]", "Data source (water balance)",
+             "Observation time UTC",
+             "Maximum Temperature [Deg C]", "Minimum Temperature [Deg C]", 'years'
+             ]
+
+lag_feat = ["Rainfall [mm]", "Mean sea level pressure [Hpa]", "Mean Relative Humidity [percent]",
+            "dewpoint (degC)", "wind_sin","wind_cos", "cloudiness", "Sunshine [hrs]"]
+roll_feat = lag_feat
+train_master_final, test_master_final = pipeline(train_master, test_master,["months", "days", "hour of day"]
+                                                 ,drop_list, feats_to_scale, [12, 365, 24],lag_feat, roll_feat)
 
 
 # -------------------- DSV -------------------- #
 
-X_train = train_master_final.drop('Total_rainfall__mm', axis=1)
-X_test = test_master_final.drop('Total_rainfall__mm', axis=1)
-y_train = train_master_final['Total_rainfall__mm']
-y_test = test_master_final['Total_rainfall__mm']
+X_train = train_master_final.drop('Rainfall [mm]', axis=1)
+X_test = test_master_final.drop('Rainfall [mm]', axis=1)
+y_train = train_master_final['Rainfall [mm]']
+y_test = test_master_final['Rainfall [mm]']
+y_train_bin = (y_train > 0).astype(int)
+y_test_bin = (y_test > 0).astype(int)
 
-from sklearn.linear_model import Ridge, LinearRegression
-from sklearn import linear_model
-from sklearn.model_selection import cross_val_score, LeaveOneOut
+X_train_sub = X_train.sample(n=1000)
+y_train_sub = np.log1p(y_train.sample(n=1000))
+print("target mean ",y_train_sub.mean())
 
-ridge_score = cross_val_score(linear_model.Ridge(),X_train, np.ravel(y_train),
-                              scoring='neg_mean_squared_error',cv=10)
-ridge_rmse = np.sqrt(-ridge_score)
-ridge_rmse_mean = ridge_rmse.mean()
-ridge_rmse_std = ridge_rmse.std()
-
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
-
-rfr_score = cross_val_score(RandomForestRegressor(), X_train, np.ravel(y_train),
-                            scoring='neg_mean_squared_error', cv=10)
-rfr_rmse = np.sqrt(-rfr_score)
-rfr_rmse_mean = rfr_rmse.mean()
-rfr_rmse_std = rfr_rmse.std()
-
-from xgboost import XGBRegressor
-
-xgb_score = cross_val_score(XGBRegressor(max_depth=5), X_train, np.ravel(y_train),
-                            scoring='neg_mean_squared_error', cv=10)
-xgb_rmse = np.sqrt(-xgb_score)
-xgb_rmse_mean = xgb_rmse.mean()
-xgb_rmse_std = xgb_rmse.std()
-
 from sklearn.svm import SVR
+from xgboost import XGBRegressor
+from sklearn.metrics import make_scorer, mean_absolute_error
 
-svr_score = cross_val_score(SVR(), X_train, np.ravel(y_train),
-                            scoring='neg_mean_squared_error', cv=10)
-svr_rmse = np.sqrt(-svr_score)
-svr_rmse_mean = svr_rmse.mean()
-svr_std = svr_rmse.std()
 
-from sklearn.neighbors import KNeighborsRegressor
+def mae_expm1(y_true, y_pred):
+    y_true = np.expm1(y_true)
+    y_pred = np.expm1(y_pred)
+    return mean_absolute_error(y_true, y_pred)
 
-kn_score = cross_val_score(KNeighborsRegressor(), X_train, np.ravel(y_train),
-                           scoring='neg_mean_squared_error', cv=10)
-kn_rmse = np.sqrt(-kn_score)
-kn_rmse_mean = kn_rmse.mean()
-kn_rmse_std = kn_rmse.std()
+
+mae_log = make_scorer(mae_expm1, greater_is_better=False)
+
+ridge_score = cross_val_score(Ridge(), X_train_sub, y_train_sub, scoring=mae_log,cv=10,n_jobs=-1)
+print((-ridge_score).mean())
+print((-ridge_score).std())
+
+rfr_score = cross_val_score(RandomForestRegressor(n_jobs=-1), X_train_sub, y_train_sub, scoring=mae_log, cv=10, n_jobs=-1)
+print((-rfr_score).mean())
+print((-rfr_score).std())
+
+X_train_sub.columns = [str(col) for col in X_train_sub.columns]
+X_train_sub.columns = X_train_sub.columns.str.replace(r'[\[\]<>]', '', regex=True)
+
+
+xgb_score = cross_val_score(XGBRegressor(objective='reg:absoluteerror',
+                                         n_estimators=100,
+                                         learning_rate=0.1,
+                                         max_depth=5,
+                                         random_state=42), X_train_sub, y_train_sub, scoring=mae_log, n_jobs=-1, cv=10)
+print((-xgb_score).mean())
+print((-xgb_score).std())
+
+svr_score = cross_val_score(SVR(), X_train_sub, y_train_sub,scoring=mae_log, n_jobs=-1, cv=10)
+print((-svr_score).mean())
+print((-svr_score).std())
+
+pass
 
 
 # -------------------- DSVI -------------------- #
 
 from sklearn.model_selection import GridSearchCV
 
-param_grid = {'n_estimators': [100],
-    'max_depth': [None],
-    'max_features': ['sqrt', 'log2', 1],
-    'min_samples_split': [15],
-    'min_samples_leaf': [7,8],
-    'bootstrap': [True]}
-
-rfr = RandomForestRegressor()
-
-gs_rfr = GridSearchCV(rfr, param_grid, cv=10,scoring='neg_mean_squared_error')
-gs_rfr.fit(X_train,y_train)
-print("best score:", gs_rfr.best_score_)
-print("best params:", gs_rfr.best_params_)
-
-svr_grid = {"C":[1, 10, 100],
-            "epsilon":[0.01, 0.1, 1, 10],
-                   "gamma":['scale', 'auto', 0.01, 0.1, 1],
-            "kernel":['rbf']}
-
-svr_gs = GridSearchCV(SVR(), svr_grid, cv=10, scoring='neg_mean_squared_error')
-svr_gs.fit(X_train, y_train)
-print("best score:", svr_gs.best_score_)
-print("best params:", svr_gs.best_params_)
+xgb_param_grid = {"n_estimators": [87, 90, 95, 100],
+                  "learning_rate":[0.001, 0.005, 0.01, 0.1],
+                  "max_depth":[11, 12, 13, 14, 15],
+                  "colsample_bytree":[0.6, 0.7, 0.8, 0.9],
+                  "subsample":[0.6, 0.7, 0.8, 0.9],
+                  "reg_alpha":[0.15, 0.16, 0.17, 0.1, 0.01]}
+xgb_gs = GridSearchCV(XGBRegressor(), param_grid=xgb_param_grid,
+                      cv=5,scoring=mae_log, n_jobs=-1)
+xgb_gs.fit(X_train_sub, y_train_sub)
+print("best params:", xgb_gs.best_params_)
+print("best score:", xgb_gs.best_score_)
 
 
 # -------------------- DSVII -------------------- #
