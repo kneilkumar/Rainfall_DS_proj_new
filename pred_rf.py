@@ -481,12 +481,13 @@ X_train = train_master_final.drop('Rainfall [mm]', axis=1)
 X_test = test_master_final.drop('Rainfall [mm]', axis=1)
 y_train = train_master_final['Rainfall [mm]']
 y_test = test_master_final['Rainfall [mm]']
-y_train_bin = (y_train > 0).astype(int)
-y_test_bin = (y_test > 0).astype(int)
+y_train_bin = pd.Series(index=y_train.index,data=[1 if i > 0 else 0 for i in list(y_train)])
+y_test_bin = pd.Series(index=y_test.index,data=[1 if i > 0 else 0 for i in list(y_test)])
 
 X_train_sub = X_train.sample(n=1000)
-y_train_sub = np.log1p(y_train.sample(n=1000))
-print("target mean ",y_train_sub.mean())
+y_train_sub_bin = y_train_bin[X_train_sub.index]
+y_train_sub = y_train[X_train_sub.index]
+
 
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import cross_val_score
@@ -503,52 +504,66 @@ def mae_expm1(y_true, y_pred):
 
 
 mae_log = make_scorer(mae_expm1, greater_is_better=False)
-
-ridge_score = cross_val_score(Ridge(), X_train_sub, y_train_sub, scoring=mae_log,cv=10,n_jobs=-1)
-print((-ridge_score).mean())
-print((-ridge_score).std())
-
-rfr_score = cross_val_score(RandomForestRegressor(n_jobs=-1), X_train_sub, y_train_sub, scoring=mae_log, cv=10, n_jobs=-1)
-print((-rfr_score).mean())
-print((-rfr_score).std())
-
+#
+# ridge_score = cross_val_score(Ridge(), X_train_sub, y_train_sub, scoring='neg_mean_absolute_error',cv=10,n_jobs=-1)
+# print("Ridge Regression avg MAE: ", (-ridge_score).mean())
+# print("Ridge Regression MAE std: ", (-ridge_score).std(), "\n")
+#
+# rfr_score = cross_val_score(RandomForestRegressor(n_jobs=-1), X_train_sub, y_train_sub, scoring='neg_mean_absolute_error')
+# print("Random Forest avg MAE: ", (-rfr_score).mean())
+# print("Random Forest MAE std: ", (-rfr_score).std(), "\n")
+#
 X_train_sub.columns = [str(col) for col in X_train_sub.columns]
 X_train_sub.columns = X_train_sub.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
+from xgboost import DMatrix, cv, XGBClassifier
 
-xgb_score = cross_val_score(XGBRegressor(objective='reg:absoluteerror',
-                                         n_estimators=100,
-                                         learning_rate=0.1,
-                                         max_depth=5,
-                                         random_state=42), X_train_sub, y_train_sub, scoring=mae_log, n_jobs=-1, cv=10)
-print((-xgb_score).mean())
-print((-xgb_score).std())
+scale_pos_weight = (y_train_sub_bin.shape[0] - np.sum(y_train_sub_bin))/np.sum(y_train_sub_bin)
 
-svr_score = cross_val_score(SVR(), X_train_sub, y_train_sub,scoring=mae_log, n_jobs=-1, cv=10)
-print((-svr_score).mean())
-print((-svr_score).std())
+classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
+                                                 n_estimators=200, min_child_weight=0.7,
+                                                 max_depth=4,subsample=0.7,
+                                                 learning_rate=0.05, gamma=30,
+                                                 eval_metric='logloss', colsample_bytree=0.41
+                                                 ), X_train_sub, y_train_sub_bin, cv=10,scoring='f1')
+print("classification:", classifier_score.mean())
 
-pass
+trained_classifier = XGBClassifier(scale_pos_weight=scale_pos_weight,
+                                                 n_estimators=200, min_child_weight=0.7,
+                                                 max_depth=4,subsample=0.7,
+                                                 learning_rate=0.05, gamma=30,
+                                                 eval_metric='logloss', colsample_bytree=0.41
+                                                 )
+trained_classifier.fit(X_train_sub, y_train_sub_bin)
+prediction_for_training = trained_classifier.predict(X_train_sub)
+
+X_train_rain_only = X_train_sub[prediction_for_training == 1]
+y_train_rain_only = y_train_sub[prediction_for_training == 1]
+
+print("target mean ",y_train_rain_only.mean(), "\n")
+
+xgb_score = cross_val_score(XGBRegressor(n_estimators=190, max_depth=4, learning_rate=0.02, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=30, min_child_weight=1, colsample_bytree=0.41
+                                         , reg_lambda=0.1, subsample=0.7, random_state=42, eval_metric='mae',n_jobs=-1),
+                            X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
+print("XGBoost 1st avg MAE: ", (-xgb_score).mean())
+print("XGBoost 1st MAE std: ", (-xgb_score).std(), "\n")
+
+xgb_score_comp = cross_val_score(XGBRegressor(n_estimators=190, max_depth=3, learning_rate=0.02, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=30, min_child_weight=1, colsample_bytree=0.41,
+    reg_lambda=1, random_state=42, subsample=0.7,n_jobs=-1,eval_metric='mae'), X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
+print("XGBoost 2nd avg MAE: ", (-xgb_score_comp).mean())
+print("XGBoost 2nd MAE std: ", (-xgb_score_comp).std(), "\n")
+
+# svr_score = cross_val_score(SVR(), X_train_sub, y_train_sub,scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
+# # print("SVR avg MAE: ", (-svr_score).mean())
+# # print("SVR MAE std: ", (-svr_score).std(), "\n")
+
 
 
 # -------------------- DSVI -------------------- #
 
-from sklearn.model_selection import GridSearchCV
 
-xgb_param_grid = {"n_estimators": [87, 90, 95, 100],
-                  "learning_rate":[0.001, 0.005, 0.01, 0.1],
-                  "max_depth":[11, 12, 13, 14, 15],
-                  "colsample_bytree":[0.6, 0.7, 0.8, 0.9],
-                  "subsample":[0.6, 0.7, 0.8, 0.9],
-                  "reg_alpha":[0.15, 0.16, 0.17, 0.1, 0.01]}
-xgb_gs = GridSearchCV(XGBRegressor(), param_grid=xgb_param_grid,
-                      cv=5,scoring=mae_log, n_jobs=-1)
-xgb_gs.fit(X_train_sub, y_train_sub)
-print("best params:", xgb_gs.best_params_)
-print("best score:", xgb_gs.best_score_)
 
 
 # -------------------- DSVII -------------------- #
-
-
-
