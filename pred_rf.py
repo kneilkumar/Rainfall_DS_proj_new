@@ -200,6 +200,32 @@ def direction_encoding(df, colname):
     return df
 
 
+def read_extra_rain(data_list, df_to_add):
+    for files in data_list:
+        file_df = pd.read_csv(files)
+        station_name = files.split(".")[0]  # or however you want to name it
+        file_df = file_df.rename(columns={'Rainfall [mm]': f'Rainfall_{station_name}'})
+        df_to_add = pd.merge(
+            df_to_add,
+            file_df[['Observation time UTC', f'Rainfall_{station_name}']],
+            how='left',
+            on='Observation time UTC'
+        )
+
+    return df_to_add
+
+
+train_master = read_extra_rain(['manukau_heads_rain_hrly.csv',
+                               'motat_rain_hrly.csv',
+                               'whenuapai_rain_hrly.csv',
+                               'auckland_aero_rain_hrly.csv'], train_master)
+
+
+test_master = read_extra_rain(['manukau_heads_rain_hrly.csv',
+                               'motat_rain_hrly.csv',
+                               'whenuapai_rain_hrly.csv',
+                               'auckland_aero_rain_hrly.csv'], test_master)
+
 train_master = add_cloudiness(train_master, 'Sunshine [hrs]')
 train_master = add_seasons(train_master, 'months')
 train_master = add_dewpoint(train_master, 'Mean Temperature [Deg C]', 'Mean Relative Humidity [percent]')
@@ -433,10 +459,6 @@ def combine(train_num, train_cat, test_num, test_cat):
     return train_final, test_final
 
 
-
-
-
-
 # train_master, test_master = combine(train_master_num, train_master_cat, test_master_num, test_master_cat)
 
 
@@ -489,7 +511,9 @@ drop_list = ["Frequency [D/H]",
              ]
 
 lag_feat = ["Rainfall [mm]", "Mean sea level pressure [Hpa]", "Mean Relative Humidity [percent]",
-            "dewpoint (degC)", "wind_sin","wind_cos", "cloudiness", "Sunshine [hrs]"]
+            "dewpoint (degC)", "wind_sin","wind_cos", "cloudiness", "Sunshine [hrs]",
+            "Rainfall_manukau_heads_rain_hrly", "Rainfall_motat_rain_hrly", "Rainfall_whenuapai_rain_hrly",
+            "Rainfall_auckland_aero_rain_hrly"]
 roll_feat = lag_feat
 train_master_final, test_master_final = pipeline(train_master, test_master,["months", "days", "hour of day"]
                                                  ,drop_list, feats_to_scale, [12, 365, 24],lag_feat, roll_feat)
@@ -504,7 +528,7 @@ y_test = test_master_final['Rainfall [mm]']
 y_train_bin = pd.Series(index=y_train.index,data=[1 if i > 0 else 0 for i in list(y_train)])
 y_test_bin = pd.Series(index=y_test.index,data=[1 if i > 0 else 0 for i in list(y_test)])
 
-X_train_sub = X_train.sample(n=1000, random_state=42)
+X_train_sub = X_train.sample(n=2000, random_state=42)
 y_train_sub_bin = y_train_bin[X_train_sub.index]
 y_train_sub = y_train[X_train_sub.index]
 
@@ -587,7 +611,7 @@ from xgboost import DMatrix, cv, XGBClassifier
 
 prt_fm = train_master_final[train_master_final["Rainfall [mm]"] > 0]
 prt_fm = prt_fm.drop("Rainfall [mm]", axis=1)
-prt_fm = prt_fm.sample(n=1000, random_state=42)
+prt_fm = prt_fm.sample(n=2000, random_state=42)
 pure_rain_train = y_train[y_train > 0]   # aka prt
 prt_sub = pure_rain_train[prt_fm.index]
 prt_fm.columns = [str(col) for col in prt_fm.columns]
@@ -613,9 +637,9 @@ for regressors in [train_reg_1, train_reg_2]:
 reg_feats = train_reg_1.fit(prt_fm, prt_sub)
 reg_imp = pd.DataFrame({"feature_name": reg_feats.feature_names_in_,
                          "feature_importance": reg_feats.feature_importances_}).sort_values(by="feature_importance", ascending=False)
-reg_imp.index = [i for i in range(103)]
+reg_imp.index = [i for i in range(147)]
 
-prt_fm = prt_fm.drop(list(reg_imp["feature_name"])[48:], axis=1)
+prt_fm = prt_fm.drop(list(reg_imp["feature_name"])[96:], axis=1)
 
 i = 0
 for regressors in [train_reg_1, train_reg_2]:
