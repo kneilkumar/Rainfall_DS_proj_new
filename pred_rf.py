@@ -577,9 +577,6 @@ y_test = test_master_final['Rainfall [mm]']
 y_train_bin = pd.Series(index=y_train.index,data=[1 if i > 0 else 0 for i in list(y_train)])
 y_test_bin = pd.Series(index=y_test.index,data=[1 if i > 0 else 0 for i in list(y_test)])
 
-X_train_sub = X_train.sample(n=4000, random_state=42)
-y_train_sub_bin = y_train_bin[X_train_sub.index]
-y_train_sub = y_train[X_train_sub.index]
 
 
 from sklearn.linear_model import Ridge
@@ -589,6 +586,8 @@ from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from sklearn.metrics import make_scorer, mean_absolute_error
 
+X_train.columns = [str(col) for col in X_train.columns]
+X_train.columns = X_train.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
 def mae_expm1(y_true, y_pred):
     y_true = np.expm1(y_true)
@@ -606,9 +605,6 @@ mae_log = make_scorer(mae_expm1, greater_is_better=False)
 # print("Random Forest avg MAE: ", (-rfr_score).mean())
 # print("Random Forest MAE std: ", (-rfr_score).std(), "\n")
 #
-X_train_sub.columns = [str(col) for col in X_train_sub.columns]
-X_train_sub.columns = X_train_sub.columns.str.replace(r'[\[\]<>]', '', regex=True)
-
 
 # xgb_score = cross_val_score(XGBRegressor(n_estimators=189, max_depth=4, learning_rate=0.045, verbosity=1,
 #     objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=7.5, min_child_weight=0.8, colsample_bytree=0.5
@@ -627,96 +623,82 @@ X_train_sub.columns = X_train_sub.columns.str.replace(r'[\[\]<>]', '', regex=Tru
 
 prt_fm = train_master_final[train_master_final["Rainfall [mm]"] > 0]
 prt_fm = prt_fm.drop("Rainfall [mm]", axis=1)
-prt_fm = prt_fm.sample(n=4000, random_state=42)
 pure_rain_train = y_train[y_train > 0]   # aka prt
 prt_sub = pure_rain_train[prt_fm.index]
 prt_fm.columns = [str(col) for col in prt_fm.columns]
 prt_fm.columns = prt_fm.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
-train_reg_1 = XGBRegressor(n_estimators=130, max_depth=4, learning_rate=0.055, verbosity=1,
-    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=65, colsample_bytree=0.85,
+train_reg_1 = XGBRegressor(n_estimators=130, max_depth=3, learning_rate=0.055, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=50, colsample_bytree=0.85,
     reg_lambda=0.1, random_state=42, subsample=0.95,n_jobs=-1)
-
-train_reg_2 = XGBRegressor(n_estimators=130, max_depth=3, learning_rate=0.055, verbosity=1,
-    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=65, colsample_bytree=0.65,
-    reg_lambda=0.1, random_state=42, subsample=0.9,n_jobs=-1)
 
 reg_names = ["control regressor", "test_regressor"]
 i = 0
-
-# for regressors in [train_reg_1, train_reg_2]:
-#     prt_sub_score = cross_val_score(regressors, prt_fm, prt_sub, cv=10, scoring='neg_mean_absolute_error', n_jobs=-1)
-#     print(f"{reg_names[i]} avg mae: ", -prt_sub_score.mean())
-#     print(f"{reg_names[i]} std: ", (-prt_sub_score).std(),"\n")
-#     i += 1
-
-reg_feats = train_reg_1.fit(prt_fm, prt_sub)
-reg_imp = pd.DataFrame({"feature_name": reg_feats.feature_names_in_,
-                         "feature_importance": reg_feats.feature_importances_}).sort_values(by="feature_importance", ascending=False)
-reg_imp.index = [i for i in range(235)]
-
-prt_fm = prt_fm.drop(list(reg_imp["feature_name"])[147:], axis=1)
-
-i = 0
+print("target mean:", pure_rain_train.mean())
 for regressors in [train_reg_1]:
-    prt_sub_score = cross_val_score(regressors, prt_fm, prt_sub, cv=10, scoring='neg_mean_absolute_error', n_jobs=-1)
+    prt_sub_score = cross_val_score(regressors, prt_fm, pure_rain_train, cv=10, scoring='neg_mean_absolute_error', n_jobs=-1)
     print(f"{reg_names[i]} avg mae: ", -prt_sub_score.mean())
     print(f"{reg_names[i]} std: ", (-prt_sub_score).std(),"\n")
     i += 1
 
+reg_feats = train_reg_1.fit(prt_fm, pure_rain_train)
+reg_imp = pd.DataFrame({"feature_name": reg_feats.feature_names_in_,
+                         "feature_importance": reg_feats.feature_importances_}).sort_values(by="feature_importance", ascending=False)
+
+
+
 from xgboost import DMatrix, cv, XGBClassifier
 
-scale_pos_weight = (y_train_sub_bin.shape[0] - np.sum(y_train_sub_bin))/np.sum(y_train_sub_bin)
+scale_pos_weight = (y_train_bin.shape[0] - np.sum(y_train_bin))/np.sum(y_train_bin)
 
-classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
-                                                 n_estimators=190, min_child_weight=0.7,
-                                                 max_depth=4,subsample=0.7,
-                                                 learning_rate=0.04, gamma=30,
-                                                 eval_metric='logloss', colsample_bytree=0.41, random_state=42
-                                                 ), X_train_sub, y_train_sub_bin, cv=10,scoring='f1')
-print("classification:", classifier_score.mean())
+# classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
+#                                                  n_estimators=190, min_child_weight=0.7,
+#                                                  max_depth=4,subsample=0.7,
+#                                                  learning_rate=0.04, gamma=30,
+#                                                  eval_metric='logloss', colsample_bytree=0.41, random_state=42
+#                                                  ), X_train, y_train_bin, cv=10,scoring='f1')
+# print("classification:", classifier_score.mean())
 
 trained_classifier = XGBClassifier(scale_pos_weight=scale_pos_weight,
-                                                 n_estimators=130, min_child_weight=65,
-                                                 max_depth=4,subsample=0.9,
-                                                 learning_rate=0.055, gamma=8,
-                                                 eval_metric='logloss', colsample_bytree=0.65, random_state=42)
+                                                 n_estimators=131, min_child_weight=50,
+                                                 max_depth=3,subsample=0.95,
+                                                 learning_rate=0.0525, gamma=8,
+                                                 colsample_bytree=0.9, random_state=42,n_jobs=-1)
 
-trained_classifier.fit(X_train_sub, y_train_sub_bin)
+trained_classifier.fit(X_train, y_train_bin)
 class_imp = pd.DataFrame({"feature_name": trained_classifier.feature_names_in_,
                          "feature_importance": trained_classifier.feature_importances_}).sort_values(by="feature_importance", ascending=False)
 class_imp.index = [i for i in range(235)]
-X_train_class = X_train_sub.drop(list(class_imp["feature_name"])[152:], axis=1)
+X_train_class = X_train.drop(list(class_imp["feature_name"])[183:], axis=1)
 classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
-                                                 n_estimators=130, min_child_weight=65,
-                                                 max_depth=4,subsample=0.9,
-                                                 learning_rate=0.055, gamma=8,
-                                                 eval_metric='logloss', colsample_bytree=0.65, random_state=42
-                                                 ), X_train_class, y_train_sub_bin, cv=10,scoring='f1')
+                                                 n_estimators=131, min_child_weight=50,
+                                                 max_depth=3,subsample=0.95,
+                                                 learning_rate=0.0525, gamma=8,
+                                                 colsample_bytree=0.9, random_state=42,n_jobs=-1
+                                                 ), X_train_class, y_train_bin, cv=10,scoring='f1',n_jobs=-1)
 print("classification:", classifier_score.mean())
 
-prediction_for_training = cross_val_predict(trained_classifier, X_train_class, y_train_sub_bin, cv=10)
-X_train_rain_only = X_train_sub[prediction_for_training == 1]
-y_train_rain_only = y_train_sub[prediction_for_training == 1]
-
-# subset_class = trained_classifier.fit(X_train_sub, y_train_sub_bin)
-# subset_pred_class = trained_classifier.predict(X_train_sub)
-# subset_reg = train_reg_1.fit(X_train_sub, y_train_sub)
-# subset_pred_reg = train_reg_1.predict(X_train_sub)
-# final_subset_pred = subset_pred_class*subset_pred_reg
-# print(mean_absolute_error(y_train_sub, final_subset_pred))
 
 # # -------------------- DSVII -------------------- #
 
-X_train.columns = [str(col) for col in X_train.columns]
-X_train.columns = X_train.columns.str.replace(r'[\[\]<>]', '', regex=True)
-
 print("target mean = ", y_train.mean())
-whole_class = trained_classifier.fit(X_train, y_train_bin)
-whole_class_pred = trained_classifier.predict(X_train)
+whole_class = trained_classifier.fit(X_train_class, y_train_bin)
+whole_class_pred = trained_classifier.predict(X_train_class)
 whole_reg = train_reg_1.fit(X_train, y_train)
 whole_reg_pred = train_reg_1.predict(X_train)
 whole_final_pred = whole_class_pred*whole_reg_pred
 whole_mae = mean_absolute_error(y_train,whole_final_pred)
 print("trainset mae: ", whole_mae)
+
+X_test.columns = [str(col) for col in X_test.columns]
+X_test.columns = X_test.columns.str.replace(r'[\[\]<>]', '', regex=True)
+
+oos_class = trained_classifier.fit(X_test, y_test_bin)
+oos_class_pred = trained_classifier.predict(X_test)
+oos_reg = train_reg_1.fit(X_test, y_test)
+oos_reg_pred = train_reg_1.predict(X_test)
+final_oos_pred = oos_reg_pred*oos_class_pred
+oos_mae = mean_absolute_error(y_test, final_oos_pred)
+print("oos mae: ", oos_mae)
+print("oos mean: ", y_test.mean())
 
