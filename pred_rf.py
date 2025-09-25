@@ -39,7 +39,7 @@ data_df['value_cat'].where(data_df['value_cat'] < 5, 5.0, inplace=True)
 # sns.histplot(data_df['value_cat'], kde=False)
 # plt.show()
 
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedShuffleSplit, cross_val_predict
 
 strata = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=69420)
 for train_index, test_index in strata.split(data_df, data_df['value_cat']):
@@ -380,6 +380,20 @@ def cyclic_scaling(train_num, test_num, col_name, periods):
 # train_master_num, test_master_num = cyclic_scaling(train_master_num, test_master_num, 'month_num')
 
 
+def preshour(train_num, test_num):
+    train_num["pressure trend sin"] = (train_num["Mean sea level pressure [Hpa]"] - train_num["Mean sea level pressure [Hpa] lag: 6"])*train_num["hour of day sin"]
+    train_num["pressure trend cos"] = (train_num["Mean sea level pressure [Hpa]"] - train_num["Mean sea level pressure [Hpa] lag: 6"])*train_num["hour of day cos"]
+    test_num["pressure trend sin"] = (test_num["Mean sea level pressure [Hpa]"] - test_num["Mean sea level pressure [Hpa] lag: 6"])*test_num["hour of day sin"]
+    test_num["pressure trend cos"] = (test_num["Mean sea level pressure [Hpa]"] - test_num["Mean sea level pressure [Hpa] lag: 6"])*test_num["hour of day cos"]
+    return train_num, test_num
+
+
+def windhum(train_num, test_num):
+    train_num['windhum'] = train_num['Speed [m/s]']*train_num['Mean Relative Humidity [percent]']
+    test_num['windhum'] = test_num['Speed [m/s]'] * test_num['Mean Relative Humidity [percent]']
+    return train_num, test_num
+
+
 def variance(train_num,  test_num):
     from sklearn.feature_selection import VarianceThreshold
     low_var_remover = VarianceThreshold()
@@ -409,7 +423,7 @@ def stdscale(train_num, test_num, feat_list):
     return train_num, test_num
 
 
-feats_to_scale = ["Station level pressure", "Mean sea level pressure [Hpa]", "Sunshine [hrs]", "cloudiness"]
+feats_to_scale = ["Station level pressure", "Mean sea level pressure [Hpa]", "Sunshine [hrs]", "cloudiness", "windhum"]
 # train_master_num, test_master_num = stdscale(train_master_num, test_master_num, feats_to_scale)
 
 
@@ -417,6 +431,10 @@ def combine(train_num, train_cat, test_num, test_cat):
     train_final = pd.merge(train_num, train_cat, left_index=True, right_index=True)
     test_final = pd.merge(test_num, test_cat, left_index=True, right_index=True)
     return train_final, test_final
+
+
+
+
 
 
 # train_master, test_master = combine(train_master_num, train_master_cat, test_master_num, test_master_cat)
@@ -435,8 +453,10 @@ def pipeline(train, test, col_name_sc,drop_feat,feat_list, periods, lag_feat, ro
     train_cat, test_cat = encoding(train_cat.drop('month names', axis=1), test_cat.drop('month names', axis=1))
     for col in col_name_sc:
         train_num, test_num = cyclic_scaling(train_num, test_num, col, periods)
+    train_num, test_num = preshour(train_num, test_num)
+    train_num, test_num = windhum(train_num, test_num)
     train_num, test_num = variance(train_num,  test_num)
-    train_num, test_num = stdscale(train_num, test_num, feat_list)
+    # train_num, test_num = stdscale(train_num, test_num, feat_list)
     train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"hour of day")
     train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"months")
     train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"days")
@@ -484,7 +504,7 @@ y_test = test_master_final['Rainfall [mm]']
 y_train_bin = pd.Series(index=y_train.index,data=[1 if i > 0 else 0 for i in list(y_train)])
 y_test_bin = pd.Series(index=y_test.index,data=[1 if i > 0 else 0 for i in list(y_test)])
 
-X_train_sub = X_train.sample(n=1000)
+X_train_sub = X_train.sample(n=1000, random_state=42)
 y_train_sub_bin = y_train_bin[X_train_sub.index]
 y_train_sub = y_train[X_train_sub.index]
 
@@ -517,53 +537,91 @@ X_train_sub.columns = [str(col) for col in X_train_sub.columns]
 X_train_sub.columns = X_train_sub.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
 from xgboost import DMatrix, cv, XGBClassifier
+#
+# scale_pos_weight = (y_train_sub_bin.shape[0] - np.sum(y_train_sub_bin))/np.sum(y_train_sub_bin)
+#
+# classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
+#                                                  n_estimators=190, min_child_weight=0.7,
+#                                                  max_depth=4,subsample=0.7,
+#                                                  learning_rate=0.04, gamma=30,
+#                                                  eval_metric='logloss', colsample_bytree=0.41, random_state=42
+#                                                  ), X_train_sub, y_train_sub_bin, cv=10,scoring='f1')
+# print("classification:", classifier_score.mean())
 
-scale_pos_weight = (y_train_sub_bin.shape[0] - np.sum(y_train_sub_bin))/np.sum(y_train_sub_bin)
+# trained_classifier = XGBClassifier(scale_pos_weight=scale_pos_weight,
+#                                                  n_estimators=190, min_child_weight=0.7,
+#                                                  max_depth=4,subsample=0.7,
+#                                                  learning_rate=0.04, gamma=30,
+#                                                  eval_metric='logloss', colsample_bytree=0.41, random_state=42)
 
-classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
-                                                 n_estimators=200, min_child_weight=0.7,
-                                                 max_depth=4,subsample=0.7,
-                                                 learning_rate=0.05, gamma=30,
-                                                 eval_metric='logloss', colsample_bytree=0.41
-                                                 ), X_train_sub, y_train_sub_bin, cv=10,scoring='f1')
-print("classification:", classifier_score.mean())
+# prediction_for_training = cross_val_predict(trained_classifier, X_train_sub, y_train_sub_bin, cv=10)
+# trained_classifier.fit(X_train_sub, y_train_sub_bin)
+# feat_imp = pd.DataFrame({"feature_name": trained_classifier.feature_names_in_,
+#                          "feature_importance": trained_classifier.feature_importances_}).sort_values(by="feature_importance", ascending=False)
+# feat_imp.index = [i for i in range(100)]
+# X_train_rain_only = X_train_sub[prediction_for_training == 1]
+# y_train_rain_only = y_train_sub[prediction_for_training == 1]
+#
+# print("target mean ",y_train_rain_only.mean(), "\n")
 
-trained_classifier = XGBClassifier(scale_pos_weight=scale_pos_weight,
-                                                 n_estimators=200, min_child_weight=0.7,
-                                                 max_depth=4,subsample=0.7,
-                                                 learning_rate=0.05, gamma=30,
-                                                 eval_metric='logloss', colsample_bytree=0.41
-                                                 )
-trained_classifier.fit(X_train_sub, y_train_sub_bin)
-prediction_for_training = trained_classifier.predict(X_train_sub)
+# xgb_score = cross_val_score(XGBRegressor(n_estimators=189, max_depth=4, learning_rate=0.045, verbosity=1,
+#     objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=7.5, min_child_weight=0.8, colsample_bytree=0.5
+#                                          , reg_lambda=0.01, subsample=0.6, random_state=42, eval_metric='mae',n_jobs=-1),
+#                             X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
+# print("XGBoost 1st avg MAE: ", (-xgb_score).mean())
+# print("XGBoost 1st MAE std: ", (-xgb_score).std())
 
-X_train_rain_only = X_train_sub[prediction_for_training == 1]
-y_train_rain_only = y_train_sub[prediction_for_training == 1]
+# xgb_score_comp = cross_val_score(XGBRegressor(n_estimators=189, max_depth=4, learning_rate=0.045, verbosity=1,
+#     objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=7.5, min_child_weight=0.01, colsample_bytree=0.5,
+#     reg_lambda=0.01, random_state=42, subsample=0.6,n_jobs=-1,eval_metric='mae'), X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
+# print("XGBoost 2nd avg MAE: ", (-xgb_score_comp).mean())
+# print("XGBoost 2nd MAE std: ", (-xgb_score_comp).std())
 
-print("target mean ",y_train_rain_only.mean(), "\n")
-
-xgb_score = cross_val_score(XGBRegressor(n_estimators=190, max_depth=4, learning_rate=0.02, verbosity=1,
-    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=30, min_child_weight=1, colsample_bytree=0.41
-                                         , reg_lambda=0.1, subsample=0.7, random_state=42, eval_metric='mae',n_jobs=-1),
-                            X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
-print("XGBoost 1st avg MAE: ", (-xgb_score).mean())
-print("XGBoost 1st MAE std: ", (-xgb_score).std(), "\n")
-
-xgb_score_comp = cross_val_score(XGBRegressor(n_estimators=190, max_depth=3, learning_rate=0.02, verbosity=1,
-    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=30, min_child_weight=1, colsample_bytree=0.41,
-    reg_lambda=1, random_state=42, subsample=0.7,n_jobs=-1,eval_metric='mae'), X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
-print("XGBoost 2nd avg MAE: ", (-xgb_score_comp).mean())
-print("XGBoost 2nd MAE std: ", (-xgb_score_comp).std(), "\n")
 
 # svr_score = cross_val_score(SVR(), X_train_sub, y_train_sub,scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
-# # print("SVR avg MAE: ", (-svr_score).mean())
-# # print("SVR MAE std: ", (-svr_score).std(), "\n")
-
+# print("SVR avg MAE: ", (-svr_score).mean())
+# print("SVR MAE std: ", (-svr_score).std(), "\n")
 
 
 # -------------------- DSVI -------------------- #
 
+prt_fm = train_master_final[train_master_final["Rainfall [mm]"] > 0]
+prt_fm = prt_fm.drop("Rainfall [mm]", axis=1)
+prt_fm = prt_fm.sample(n=1000, random_state=42)
+pure_rain_train = y_train[y_train > 0]   # aka prt
+prt_sub = pure_rain_train[prt_fm.index]
+prt_fm.columns = [str(col) for col in prt_fm.columns]
+prt_fm.columns = prt_fm.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
+train_reg_1 = XGBRegressor(n_estimators=130, max_depth=3, learning_rate=0.055, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=65, colsample_bytree=0.65,
+    reg_lambda=0.01, random_state=42, subsample=0.9,n_jobs=-1)
 
+train_reg_2 = XGBRegressor(n_estimators=130, max_depth=3, learning_rate=0.055, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=65, colsample_bytree=0.65,
+    reg_lambda=0.01, random_state=42, subsample=0.9,n_jobs=-1)
 
-# -------------------- DSVII -------------------- #
+reg_names = ["control regressor", "test_regressor"]
+i = 0
+print("target mean = ", prt_sub.mean())
+for regressors in [train_reg_1, train_reg_2]:
+    prt_sub_score = cross_val_score(regressors, prt_fm, prt_sub, cv=10, scoring='neg_mean_absolute_error', n_jobs=-1)
+    print(f"{reg_names[i]} avg mae: ", -prt_sub_score.mean())
+    print(f"{reg_names[i]} std: ", (-prt_sub_score).std(),"\n")
+    i += 1
+
+reg_feats = train_reg_1.fit(prt_fm, prt_sub)
+reg_imp = pd.DataFrame({"feature_name": reg_feats.feature_names_in_,
+                         "feature_importance": reg_feats.feature_importances_}).sort_values(by="feature_importance", ascending=False)
+reg_imp.index = [i for i in range(103)]
+
+prt_fm = prt_fm.drop(list(reg_imp["feature_name"])[48:], axis=1)
+
+i = 0
+for regressors in [train_reg_1, train_reg_2]:
+    prt_sub_score = cross_val_score(regressors, prt_fm, prt_sub, cv=10, scoring='neg_mean_absolute_error', n_jobs=-1)
+    print(f"{reg_names[i]} avg mae: ", -prt_sub_score.mean())
+    print(f"{reg_names[i]} std: ", (-prt_sub_score).std(),"\n")
+    i += 1
+
+# # -------------------- DSVII -------------------- #
