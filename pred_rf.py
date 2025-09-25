@@ -643,7 +643,7 @@ train_reg_2 = XGBRegressor(n_estimators=130, max_depth=3, learning_rate=0.055, v
 
 reg_names = ["control regressor", "test_regressor"]
 i = 0
-print("target mean = ", prt_sub.mean())
+
 # for regressors in [train_reg_1, train_reg_2]:
 #     prt_sub_score = cross_val_score(regressors, prt_fm, prt_sub, cv=10, scoring='neg_mean_absolute_error', n_jobs=-1)
 #     print(f"{reg_names[i]} avg mae: ", -prt_sub_score.mean())
@@ -699,11 +699,24 @@ prediction_for_training = cross_val_predict(trained_classifier, X_train_class, y
 X_train_rain_only = X_train_sub[prediction_for_training == 1]
 y_train_rain_only = y_train_sub[prediction_for_training == 1]
 
-subset_class = trained_classifier.fit(X_train_sub, y_train_sub_bin)
-subset_pred_class = trained_classifier.predict(X_train_sub)
-subset_reg = train_reg_1.fit(X_train_sub, y_train_sub)
-subset_pred_reg = train_reg_1.predict(X_train_sub)
-final_subset_pred = subset_pred_class*subset_pred_reg
-print(mean_absolute_error(y_train_sub, final_subset_pred))
+# subset_class = trained_classifier.fit(X_train_sub, y_train_sub_bin)
+# subset_pred_class = trained_classifier.predict(X_train_sub)
+# subset_reg = train_reg_1.fit(X_train_sub, y_train_sub)
+# subset_pred_reg = train_reg_1.predict(X_train_sub)
+# final_subset_pred = subset_pred_class*subset_pred_reg
+# print(mean_absolute_error(y_train_sub, final_subset_pred))
 
 # # -------------------- DSVII -------------------- #
+
+X_train.columns = [str(col) for col in X_train.columns]
+X_train.columns = X_train.columns.str.replace(r'[\[\]<>]', '', regex=True)
+
+print("target mean = ", y_train.mean())
+whole_class = trained_classifier.fit(X_train, y_train_bin)
+whole_class_pred = trained_classifier.predict(X_train)
+whole_reg = train_reg_1.fit(X_train, y_train)
+whole_reg_pred = train_reg_1.predict(X_train)
+whole_final_pred = whole_class_pred*whole_reg_pred
+whole_mae = mean_absolute_error(y_train,whole_final_pred)
+print("trainset mae: ", whole_mae)
+
