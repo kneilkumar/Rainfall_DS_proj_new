@@ -693,10 +693,8 @@ print("trainset mae: ", whole_mae)
 X_test.columns = [str(col) for col in X_test.columns]
 X_test.columns = X_test.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
-oos_class = trained_classifier.fit(X_test, y_test_bin)
-oos_class_pred = trained_classifier.predict(X_test)
-oos_reg = train_reg_1.fit(X_test, y_test)
-oos_reg_pred = train_reg_1.predict(X_test)
+oos_class_pred = whole_class.predict(X_test.drop(list(class_imp["feature_name"])[183:], axis=1))
+oos_reg_pred = whole_reg.predict(X_test)
 final_oos_pred = oos_reg_pred*oos_class_pred
 oos_mae = mean_absolute_error(y_test, final_oos_pred)
 print("oos mae: ", oos_mae)
