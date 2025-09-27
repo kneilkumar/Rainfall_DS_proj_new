@@ -109,13 +109,13 @@ def plot_rain_numfeat(df, x, y, plttype):
     plt.show()
 
 
-# plot_rain_numfeat(train_master, 'datetimes', 'Rainfall [mm]', "line")
-# plot_rain_numfeat(train_master, 'Mean Relative Humidity [percent]', 'Rainfall [mm]', "line")
-# plot_rain_numfeat(train_master,'Mean sea level pressure [Hpa]', 'Rainfall [mm]', "line")
-# plot_rain_numfeat(train_master,'Station level pressure', 'Rainfall [mm]', "line")
-# plot_rain_numfeat(train_master,'Speed [m/s]', 'Rainfall [mm]', "hist")
-# plot_rain_numfeat(train_master, 'Mean Temperature [Deg C]', 'Rainfall [mm]', 'linreg')
-#
+plot_rain_numfeat(train_master, 'datetimes', 'Rainfall [mm]', "line")
+plot_rain_numfeat(train_master, 'Mean Relative Humidity [percent]', 'Rainfall [mm]', "line")
+plot_rain_numfeat(train_master,'Mean sea level pressure [Hpa]', 'Rainfall [mm]', "line")
+plot_rain_numfeat(train_master,'Station level pressure', 'Rainfall [mm]', "line")
+plot_rain_numfeat(train_master,'Speed [m/s]', 'Rainfall [mm]', "hist")
+plot_rain_numfeat(train_master, 'Mean Temperature [Deg C]', 'Rainfall [mm]', 'linreg')
+
 
 # -------------------- DSIII.V: MAKING NEW FEATURES-------------------- #
 
@@ -325,17 +325,17 @@ def plot_categorical(df, x, y, type):
     plt.show()
 
 
-# plot_categorical(train_master, 'ENSO cat', 'Total_rainfall__mm', "violin")
-# plot_categorical(train_master, 'Seasons', 'Total_rainfall__mm', "box")
-# plot_rain_numfeat(train_master, 'cloudiness','Total_rainfall__mm',"scatter")
-# plot_rain_numfeat(train_master, 'dewpoint (degC)','Total_rainfall__mm',"scatter")
-#
-# colormap(train_master,'Mean_wind_speed__m_s', 'Mean_9am_Humidity__percent',
-#          'Total_rainfall__mm',"jet",'dewpoint (degC)',color=True)
-# colormap(train_master,'Mean_air_temperature__Deg_C', 'Mean_9am_Humidity__percent',
-#          'Total_rainfall__mm',"jet", c=None,color=False)
-# colormap(train_master,'wind_cos', 'wind_sin','Total_rainfall__mm',"jet"
-#          ,'Mean_wind_speed__m_s',True)
+plot_categorical(train_master, 'ENSO cat', 'Total_rainfall__mm', "violin")
+plot_categorical(train_master, 'Seasons', 'Total_rainfall__mm', "box")
+plot_rain_numfeat(train_master, 'cloudiness','Total_rainfall__mm',"scatter")
+plot_rain_numfeat(train_master, 'dewpoint (degC)','Total_rainfall__mm',"scatter")
+
+colormap(train_master,'Mean_wind_speed__m_s', 'Mean_9am_Humidity__percent',
+         'Total_rainfall__mm',"jet",'dewpoint (degC)',color=True)
+colormap(train_master,'Mean_air_temperature__Deg_C', 'Mean_9am_Humidity__percent',
+         'Total_rainfall__mm',"jet", c=None,color=False)
+colormap(train_master,'wind_cos', 'wind_sin','Total_rainfall__mm',"jet"
+         ,'Mean_wind_speed__m_s',True)
 
 
 # -------------------- DSIV -------------------- #
@@ -455,9 +455,28 @@ def preshour(train_num, test_num, pressure_list, lag_list):
     return train_num, test_num
 
 
-def windhum(train_num, test_num):
-    train_num['windhum'] = train_num['Speed [m/s]']*train_num['Mean Relative Humidity [percent]']
-    test_num['windhum'] = test_num['Speed [m/s]'] * test_num['Mean Relative Humidity [percent]']
+def int_feats(train_num, test_num):
+    train_num['dewcloud'] = train_num['dewpoint (degC)']*train_num['cloudiness']
+    test_num['dewcloud'] = test_num['dewpoint (degC)'] * test_num['cloudiness']
+    train_num['temphum'] = train_num['Mean Temperature [Deg C]']*train_num['Mean Relative Humidity [percent]']
+    test_num['temphum'] = test_num['Mean Temperature [Deg C]'] * test_num['Mean Relative Humidity [percent]']
+    train_num['dewtemp'] = train_num['dewpoint (degC)']*train_num['Mean Temperature [Deg C]']
+    test_num['dewtemp'] = test_num['dewpoint (degC)'] * test_num['Mean Temperature [Deg C]']
+    train_num['P_grad_mang_man'] = train_num['Mean sea level pressure [Hpa]'] - train_num['Sea_level_pressure_manukau_heads_pressure']
+    train_num['P_grad_mang_motat'] = train_num['Mean sea level pressure [Hpa]'] - train_num['Sea_level_pressure_motat_pressure']
+    train_num['P_grad_mang_aero'] = train_num['Mean sea level pressure [Hpa]'] - train_num['Sea_level_pressure_aero_pressure']
+    test_num['P_grad_mang_man'] = test_num['Mean sea level pressure [Hpa]'] - test_num['Sea_level_pressure_manukau_heads_pressure']
+    test_num['P_grad_mang_motat'] = test_num['Mean sea level pressure [Hpa]'] - test_num['Sea_level_pressure_motat_pressure']
+    test_num['P_grad_mang_aero'] = test_num['Mean sea level pressure [Hpa]'] - test_num['Sea_level_pressure_aero_pressure']
+    train_num['P_grad_mang_man_t'] = (train_num['Mean sea level pressure [Hpa]'] - train_num['Sea_level_pressure_manukau_heads_pressure'])/6
+    train_num['P_grad_mang_motat_t'] = (train_num['Mean sea level pressure [Hpa]'] - train_num['Sea_level_pressure_motat_pressure lag: 6'])/6
+    train_num['P_grad_mang_aero_t'] = (train_num['Mean sea level pressure [Hpa]'] - train_num['Sea_level_pressure_aero_pressure lag: 3'])/3
+    test_num['P_grad_mang_man_t'] = (test_num['Mean sea level pressure [Hpa]'] - test_num['Sea_level_pressure_manukau_heads_pressure lag: 3'])/3
+    test_num['P_grad_mang_motat_t'] = (test_num['Mean sea level pressure [Hpa]'] - test_num['Sea_level_pressure_motat_pressure lag: 6'])/6
+    test_num['P_grad_mang_aero_t'] = (test_num['Mean sea level pressure [Hpa]'] - test_num['Sea_level_pressure_aero_pressure lag: 3'])/3
+    test_num['dewtemp'] = test_num['dewpoint (degC)'] * test_num['Mean Temperature [Deg C]']
+    train_num['suntemp'] = train_num['Sunshine [hrs]'] * train_num['Mean Temperature [Deg C]']
+    test_num['suntemp'] = test_num['Sunshine [hrs]'] * test_num['Mean Temperature [Deg C]']
     return train_num, test_num
 
 
@@ -517,9 +536,9 @@ def pipeline(train, test, col_name_sc,drop_feat,feat_list, periods, lag_feat, ro
     for col in col_name_sc:
         train_num, test_num = cyclic_scaling(train_num, test_num, col, periods)
     train_num, test_num = preshour(train_num, test_num, pressure_list, lag_list)
-    train_num, test_num = windhum(train_num, test_num)
+    train_num, test_num = int_feats(train_num, test_num)
     train_num, test_num = variance(train_num,  test_num)
-    # train_num, test_num = stdscale(train_num, test_num, feat_list)
+    train_num, test_num = stdscale(train_num, test_num, feat_list)
     train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"hour of day")
     train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"months")
     train_num, train_cat, test_num, test_cat = drop_unwanted(train_num, train_cat, test_num, test_cat,"days")
@@ -596,27 +615,27 @@ def mae_expm1(y_true, y_pred):
 
 
 mae_log = make_scorer(mae_expm1, greater_is_better=False)
-#
-# ridge_score = cross_val_score(Ridge(), X_train_sub, y_train_sub, scoring='neg_mean_absolute_error',cv=10,n_jobs=-1)
-# print("Ridge Regression avg MAE: ", (-ridge_score).mean())
-# print("Ridge Regression MAE std: ", (-ridge_score).std(), "\n")
-#
-# rfr_score = cross_val_score(RandomForestRegressor(n_jobs=-1), X_train_sub, y_train_sub, scoring='neg_mean_absolute_error')
-# print("Random Forest avg MAE: ", (-rfr_score).mean())
-# print("Random Forest MAE std: ", (-rfr_score).std(), "\n")
-#
 
-# xgb_score = cross_val_score(XGBRegressor(n_estimators=189, max_depth=4, learning_rate=0.045, verbosity=1,
-#     objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=7.5, min_child_weight=0.8, colsample_bytree=0.5
-#                                          , reg_lambda=0.01, subsample=0.6, random_state=42, eval_metric='mae',n_jobs=-1),
-#                             X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
-# print("XGBoost 1st avg MAE: ", (-xgb_score).mean())
-# print("XGBoost 1st MAE std: ", (-xgb_score).std())
+ridge_score = cross_val_score(Ridge(), X_train_sub, y_train_sub, scoring='neg_mean_absolute_error',cv=10,n_jobs=-1)
+print("Ridge Regression avg MAE: ", (-ridge_score).mean())
+print("Ridge Regression MAE std: ", (-ridge_score).std(), "\n")
+
+rfr_score = cross_val_score(RandomForestRegressor(n_jobs=-1), X_train_sub, y_train_sub, scoring='neg_mean_absolute_error')
+print("Random Forest avg MAE: ", (-rfr_score).mean())
+print("Random Forest MAE std: ", (-rfr_score).std(), "\n")
 
 
-# svr_score = cross_val_score(SVR(), X_train_sub, y_train_sub,scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
-# print("SVR avg MAE: ", (-svr_score).mean())
-# print("SVR MAE std: ", (-svr_score).std(), "\n")
+xgb_score = cross_val_score(XGBRegressor(n_estimators=189, max_depth=4, learning_rate=0.045, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=7.5, min_child_weight=0.8, colsample_bytree=0.5
+                                         , reg_lambda=0.01, subsample=0.6, random_state=42, eval_metric='mae',n_jobs=-1),
+                            X_train_rain_only, y_train_rain_only, scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
+print("XGBoost 1st avg MAE: ", (-xgb_score).mean())
+print("XGBoost 1st MAE std: ", (-xgb_score).std())
+
+
+svr_score = cross_val_score(SVR(), X_train_sub, y_train_sub,scoring='neg_mean_absolute_error', n_jobs=-1, cv=10)
+print("SVR avg MAE: ", (-svr_score).mean())
+print("SVR MAE std: ", (-svr_score).std(), "\n")
 
 
 # -------------------- DSVI -------------------- #
@@ -628,9 +647,9 @@ prt_sub = pure_rain_train[prt_fm.index]
 prt_fm.columns = [str(col) for col in prt_fm.columns]
 prt_fm.columns = prt_fm.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
-train_reg_1 = XGBRegressor(n_estimators=130, max_depth=3, learning_rate=0.055, verbosity=1,
-    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=50, colsample_bytree=0.85,
-    reg_lambda=0.1, random_state=42, subsample=0.95,n_jobs=-1)
+train_reg_1 = XGBRegressor(n_estimators=5000, max_depth=4, learning_rate=0.065, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=0.01, colsample_bytree=0.85,
+    reg_lambda=0.05, random_state=42, subsample=0.95,n_jobs=-1)
 
 reg_names = ["control regressor", "test_regressor"]
 i = 0
@@ -644,42 +663,38 @@ for regressors in [train_reg_1]:
 reg_feats = train_reg_1.fit(prt_fm, pure_rain_train)
 reg_imp = pd.DataFrame({"feature_name": reg_feats.feature_names_in_,
                          "feature_importance": reg_feats.feature_importances_}).sort_values(by="feature_importance", ascending=False)
-
+reg_imp.index = [i for i in range(244)]
 
 
 from xgboost import DMatrix, cv, XGBClassifier
 
 scale_pos_weight = (y_train_bin.shape[0] - np.sum(y_train_bin))/np.sum(y_train_bin)
 
-# classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
-#                                                  n_estimators=190, min_child_weight=0.7,
-#                                                  max_depth=4,subsample=0.7,
-#                                                  learning_rate=0.04, gamma=30,
-#                                                  eval_metric='logloss', colsample_bytree=0.41, random_state=42
-#                                                  ), X_train, y_train_bin, cv=10,scoring='f1')
-# print("classification:", classifier_score.mean())
+classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
+                                                 n_estimators=190, min_child_weight=0.7,
+                                                 max_depth=4,subsample=0.7,
+                                                 learning_rate=0.04, gamma=30,
+                                                 eval_metric='logloss', colsample_bytree=0.41, random_state=42
+                                                 ), X_train, y_train_bin, cv=10,scoring='f1')
+print("classification:", classifier_score.mean())
 
-trained_classifier = XGBClassifier(scale_pos_weight=scale_pos_weight,
-                                                 n_estimators=131, min_child_weight=50,
-                                                 max_depth=3,subsample=0.95,
-                                                 learning_rate=0.0525, gamma=8,
-                                                 colsample_bytree=0.9, random_state=42,n_jobs=-1)
+trained_classifier = XGBClassifier(n_estimators=5000, max_depth=4, learning_rate=0.065, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=0.01, colsample_bytree=0.85,
+    reg_lambda=0.05, random_state=42, subsample=0.95,n_jobs=-1)
 
 trained_classifier.fit(X_train, y_train_bin)
 class_imp = pd.DataFrame({"feature_name": trained_classifier.feature_names_in_,
                          "feature_importance": trained_classifier.feature_importances_}).sort_values(by="feature_importance", ascending=False)
-class_imp.index = [i for i in range(235)]
-X_train_class = X_train.drop(list(class_imp["feature_name"])[183:], axis=1)
-classifier_score = cross_val_score(XGBClassifier(scale_pos_weight=scale_pos_weight,
-                                                 n_estimators=131, min_child_weight=50,
-                                                 max_depth=3,subsample=0.95,
-                                                 learning_rate=0.0525, gamma=8,
-                                                 colsample_bytree=0.9, random_state=42,n_jobs=-1
+class_imp.index = [i for i in range(244)]
+X_train_class = X_train.drop(list(class_imp["feature_name"])[193:], axis=1)
+classifier_score = cross_val_score(XGBClassifier(n_estimators=5000, max_depth=4, learning_rate=0.065, verbosity=1,
+    objective='reg:absoluteerror', booster='gbtree', tree_method='hist', gamma=8, min_child_weight=0.01, colsample_bytree=0.85,
+    reg_lambda=0.05, random_state=42, subsample=0.95,n_jobs=-1
                                                  ), X_train_class, y_train_bin, cv=10,scoring='f1',n_jobs=-1)
 print("classification:", classifier_score.mean())
 
 
-# # -------------------- DSVII -------------------- #
+# # # -------------------- DSVII -------------------- #
 
 print("target mean = ", y_train.mean())
 whole_class = trained_classifier.fit(X_train_class, y_train_bin)
@@ -693,7 +708,7 @@ print("trainset mae: ", whole_mae)
 X_test.columns = [str(col) for col in X_test.columns]
 X_test.columns = X_test.columns.str.replace(r'[\[\]<>]', '', regex=True)
 
-oos_class_pred = whole_class.predict(X_test.drop(list(class_imp["feature_name"])[183:], axis=1))
+oos_class_pred = whole_class.predict(X_test.drop(list(class_imp["feature_name"])[193:], axis=1))
 oos_reg_pred = whole_reg.predict(X_test)
 final_oos_pred = oos_reg_pred*oos_class_pred
 oos_mae = mean_absolute_error(y_test, final_oos_pred)
