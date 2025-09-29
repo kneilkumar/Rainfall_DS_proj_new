@@ -1,5 +1,5 @@
 import datetime
-
+import os
 import streamlit as st
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -12,10 +12,12 @@ import folium
 from folium.plugins import HeatMapWithTime
 from streamlit_folium import st_folium, folium_static
 
-mangere_df = pd.read_csv("csv_mangere_for_dash").sort_values(by="Observation time UTC")
-albany_df = pd.read_csv("csv_albany_for_dash").sort_values(by="Observation time UTC")
-heads_df = pd.read_csv("csv_manheads_for_dash").sort_values(by="Observation time UTC")
-motat_df = pd.read_csv("csv_motat_for_dash").sort_values(by="Observation time UTC")
+
+
+mangere_df = pd.read_csv("pages/pages/csv_mangere_for_dash").sort_values(by="Observation time UTC")
+albany_df = pd.read_csv("pages/pages/csv_albany_for_dash").sort_values(by="Observation time UTC")
+heads_df = pd.read_csv("pages/pages/csv_manheads_for_dash").sort_values(by="Observation time UTC")
+motat_df = pd.read_csv("pages/pages/csv_motat_for_dash").sort_values(by="Observation time UTC")
 
 for dfs in [mangere_df, albany_df, heads_df, motat_df]:
     dfs["predicted rainfall [mm]"] = np.maximum(dfs["regressionss"], 0)
