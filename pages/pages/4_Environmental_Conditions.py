@@ -22,7 +22,7 @@ st.subheader("Environmental Element Interaction", divider="rainbow")
 
 fe_df = pd.read_csv("pages/pages/feat_eng_df.csv")
 mangere = pd.read_csv("pages/pages/csv_mangere_for_dash")[["Sunshine [hrs]", "Rainfall [mm]", "Mean Temperature [Deg C]", "Mean Relative Humidity [percent]", "Direction [deg T]", "Speed [m/s]", "Mean sea level pressure [Hpa]", "dewpoint (degC)"]]
-head = pd.read_csv("pages/pages/sv_manheads_for_dash")[["Sunshine [hrs]", "Rainfall [mm]", "Mean Temperature [Deg C]", "Mean Relative Humidity [percent]", "Direction [deg T]", "Speed [m/s]", "Mean sea level pressure [Hpa]", "dewpoint (degC)"]]
+head = pd.read_csv("pages/pages/csv_manheads_for_dash")[["Sunshine [hrs]", "Rainfall [mm]", "Mean Temperature [Deg C]", "Mean Relative Humidity [percent]", "Direction [deg T]", "Speed [m/s]", "Mean sea level pressure [Hpa]", "dewpoint (degC)"]]
 motat = pd.read_csv("pages/pages/csv_motat_for_dash")[["Sunshine [hrs]", "Rainfall [mm]", "Mean Temperature [Deg C]", "Mean Relative Humidity [percent]", "Direction [deg T]", "Speed [m/s]", "Mean sea level pressure [Hpa]", "dewpoint (degC)"]]
 albany = pd.read_csv("pages/pages/csv_albany_for_dash")[["Sunshine [hrs]", "Rainfall [mm]", "Mean Temperature [Deg C]", "Mean Relative Humidity [percent]", "Direction [deg T]", "Speed [m/s]", "Mean sea level pressure [Hpa]", "dewpoint (degC)"]]
 
