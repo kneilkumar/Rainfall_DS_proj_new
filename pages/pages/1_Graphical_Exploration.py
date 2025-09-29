@@ -33,7 +33,7 @@ with mangere_tab:
     leftman, rightman = st.columns(2)
     fig = make_subplots(specs=[[{'secondary_y': True}]])
 
-    if leftman.checkbox("Show Predicted Rainfall", width="stretch"):
+    if leftman.checkbox("Show Predicted Rainfall"):
         fig.add_trace(
             go.Scatter(x=mangere_df["Observation time UTC"],
                        y=mangere_df["predicted rainfall [mm]"],
@@ -41,7 +41,7 @@ with mangere_tab:
             secondary_y=False
         )
 
-    if rightman.checkbox("Show True Rainfall", width="stretch"):
+    if rightman.checkbox("Show True Rainfall"):
         fig.add_trace(
             go.Scatter(x=mangere_df["Observation time UTC"],
                        y=mangere_df["True Rainfall [mm]"],
@@ -75,7 +75,7 @@ with heads_tab:
     leftheads, rightheads = st.columns(2)
     fig1 = make_subplots(specs=[[{'secondary_y': True}]])
 
-    if leftheads.checkbox("Show Predicted Rainfall", width="stretch", key="head1"):
+    if leftheads.checkbox("Show Predicted Rainfall", key="head1"):
         fig1.add_trace(
             go.Scatter(x=heads_df["Observation time UTC"],
                        y=heads_df["predicted rainfall [mm]"],
@@ -83,7 +83,7 @@ with heads_tab:
             secondary_y=False
         )
 
-    if rightheads.checkbox("Show True Rainfall", width="stretch", key="head2"):
+    if rightheads.checkbox("Show True Rainfall", key="head2"):
         fig1.add_trace(
             go.Scatter(x=heads_df["Observation time UTC"],
                        y=heads_df["True Rainfall [mm]"],
@@ -117,7 +117,7 @@ with motat_tab:
     lefttat, righttat = st.columns(2)
     fig2 = make_subplots(specs=[[{'secondary_y': True}]])
 
-    if lefttat.checkbox("Show Predicted Rainfall", width="stretch", key="tat1"):
+    if lefttat.checkbox("Show Predicted Rainfall", key="tat1"):
         fig2.add_trace(
             go.Scatter(x=motat_df["Observation time UTC"],
                        y=motat_df["predicted rainfall [mm]"],
@@ -125,7 +125,7 @@ with motat_tab:
             secondary_y=False
         )
 
-    if righttat.checkbox("Show True Rainfall", width="stretch", key="tat2"):
+    if righttat.checkbox("Show True Rainfall", key="tat2"):
         fig2.add_trace(
             go.Scatter(x=motat_df["Observation time UTC"],
                        y=motat_df["True Rainfall [mm]"],
@@ -159,7 +159,7 @@ with albany_tab:
     leftban, rightban = st.columns(2)
     fig3 = make_subplots(specs=[[{'secondary_y': True}]])
 
-    if leftban.checkbox("Show Predicted Rainfall", width="stretch", key="ban1"):
+    if leftban.checkbox("Show Predicted Rainfall", key="ban1"):
         fig3.add_trace(
             go.Scatter(x=albany_df["Observation time UTC"],
                        y=albany_df["predicted rainfall [mm]"],
@@ -167,7 +167,7 @@ with albany_tab:
             secondary_y=False
         )
 
-    if rightban.checkbox("Show True Rainfall", width="stretch", key="ban2"):
+    if rightban.checkbox("Show True Rainfall", key="ban2"):
         fig3.add_trace(
             go.Scatter(x=albany_df["Observation time UTC"],
                        y=albany_df["True Rainfall [mm]"],
