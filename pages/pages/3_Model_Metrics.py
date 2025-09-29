@@ -14,14 +14,14 @@ from sklearn.preprocessing import StandardScaler
 from streamlit_folium import st_folium, folium_static
 import plotly.express as px
 
-reg_imp_man = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/feat_imp_reg_for_dash.csv")
-class_imp_man = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/feat_imp_class_for_dash.csv")
-reg_imp_alb = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/regimp_alb.csv")
-class_imp_alb = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/classimp_alb.csv")
-reg_imp_heads = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/regimp_heads.csv")
-class_imp_heads = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/classimp_heads.csv")
-class_imp_motat = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/classimp_motat.csv")
-reg_imp_motat = pd.read_csv("/Users/neilkumar/Desktop/Python/Oceanum/pages/pages/regimp_motat.csv")
+reg_imp_man = pd.read_csv("pages/pages/feat_imp_reg_for_dash.csv")
+class_imp_man = pd.read_csv("pages/pages/feat_imp_class_for_dash.csv")
+reg_imp_alb = pd.read_csv("pages/pages/regimp_alb.csv")
+class_imp_alb = pd.read_csv("pages/pages/classimp_alb.csv")
+reg_imp_heads = pd.read_csv("pages/pages/regimp_heads.csv")
+class_imp_heads = pd.read_csv("pages/pages/classimp_heads.csv")
+class_imp_motat = pd.read_csv("pages/pages/classimp_motat.csv")
+reg_imp_motat = pd.read_csv("pages/pages/regimp_motat.csv")
 
 st.header("Model Performance and Metrics", divider="rainbow")
 
