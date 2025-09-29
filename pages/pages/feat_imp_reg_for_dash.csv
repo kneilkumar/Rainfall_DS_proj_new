@@ -1,0 +1,212 @@
+,feature_name,feature_importance
+0,Rainfall_motat_rain,0.035529386
+1,Rainfall_albany_rain,0.03046124
+2,Rainfall mm lag: 1,0.011899338
+3,Rainfall_motat_rain lag: 1,0.008765531
+4,Speed_motat_wind,0.0085149435
+5,Sea_level_pressure_albany_pressure lag: 2,0.008235246
+6,Speed_albany_wind,0.008157439
+7,24 hr rolling avg Rainfall_manukau_heads_rain,0.008036986
+8,3 hr rolling avg Rainfall mm,0.0077024666
+9,Rainfall_albany_rain lag: 1,0.007656066
+10,3 hr rolling avg cloudiness,0.0074353325
+11,12 hr rolling avg Sea_level_pressure_albany_pressure,0.0071640685
+12,6 hr rolling avg Sea_level_pressure_motat_pressure,0.0070353835
+13,Sea_level_pressure_motat_pressure lag: 12,0.0066443747
+14,Rainfall_manukau_heads_rain,0.0066298502
+15,3 hr rolling avg Sunshine hrs,0.0063682906
+16,24 hr rolling avg Sea_level_pressure_albany_pressure,0.005976294
+17,Sunshine hrs lag: 2,0.005976227
+18,Mean Temperature Deg C,0.005926768
+19,Sea_level_pressure_manukau_heads_pressure,0.0058364756
+20,Sea_level_pressure_albany_pressure lag: 24,0.0058312044
+21,Sea_level_pressure_motat_pressure lag: 2,0.005819191
+22,6 hr rolling avg Sea_level_pressure_albany_pressure,0.005771694
+23,dewpoint (degC) lag: 12,0.0056912857
+24,wind_cos lag: 2,0.005673917
+25,3 hr rolling avg dewpoint (degC),0.0056654
+26,P_grad_mang_man,0.0056532333
+27,Rainfall_manukau_heads_rain lag: 1,0.0055985576
+28,3 hr rolling avg Rainfall_albany_rain,0.0055856537
+29,6 hr rolling avg Sea_level_pressure_manukau_heads_pressure,0.0055665895
+30,dewpoint (degC) lag: 1,0.0055289697
+31,Sea_level_pressure_albany_pressure lag: 12,0.0055079726
+32,6 hr rolling avg Mean sea level pressure Hpa,0.0054774457
+33,Sea_level_pressure_motat_pressure lag: 3,0.0054708812
+34,Mean sea level pressure Hpa lag: 2,0.0054705287
+35,6 hr rolling avg Rainfall mm,0.005434873
+36,Speed_albany_wind lag: 1,0.005431833
+37,days cos,0.005421978
+38,3 hr rolling avg Speed_motat_wind,0.0054056915
+39,Sea_level_pressure_albany_pressure lag: 6,0.0053596236
+40,Speed_manukau_heads_wind lag: 1,0.0053250603
+41,Speed_albany_wind lag: 3,0.005255193
+42,12 hr rolling avg Mean Relative Humidity percent,0.005248465
+43,Speed_motat_wind lag: 2,0.0052081402
+44,24 hr rolling avg Sea_level_pressure_motat_pressure,0.0051994924
+45,3 hr rolling avg Rainfall_motat_rain,0.005190309
+46,wind_cos lag: 1,0.00517943
+47,dewcloud,0.005174194
+48,wind_cos lag: 12,0.005173589
+49,Sea_level_pressure_motat_pressure,0.005164191
+50,Station level pressure,0.0051511284
+51,Mean sea level pressure Hpa,0.0051098503
+52,12 hr rolling avg Sea_level_pressure_manukau_heads_pressure,0.0051091565
+53,Sea_level_pressure_manukau_heads_pressure lag: 24,0.005067958
+54,suntemp,0.0050517116
+55,3 hr rolling avg wind_cos,0.0050476906
+56,24 hr rolling avg Mean sea level pressure Hpa,0.0049799974
+57,Speed_motat_wind lag: 1,0.004966299
+58,wind_cos lag: 6,0.004933503
+59,12 hr rolling avg dewpoint (degC),0.004926124
+60,wind_cos,0.00490897
+61,12 hr rolling avg Speed_albany_wind,0.004901754
+62,24 hr rolling avg wind_cos,0.004886431
+63,Speed_motat_wind lag: 12,0.004881898
+64,Mean Relative Humidity percent,0.0048787273
+65,P_grad_mang_motat_t,0.0048521324
+66,6 hr rolling avg Rainfall_motat_rain,0.0048463577
+67,Speed_albany_wind lag: 24,0.0048402064
+68,wind_sin lag: 6,0.0048363153
+69,Speed_manukau_heads_wind lag: 2,0.004821191
+70,6 hr rolling avg wind_sin,0.004791542
+71,12 hr rolling avg Mean sea level pressure Hpa,0.004784737
+72,Sea_level_pressure_albany_pressure,0.004778293
+73,dewtemp,0.004772068
+74,months sin,0.0047569363
+75,temphum,0.0047213826
+76,6 hr rolling avg Speed_albany_wind,0.0047050994
+77,3 hr rolling avg Mean Relative Humidity percent,0.004698471
+78,Speed_manukau_heads_wind lag: 24,0.004687891
+79,12 hr rolling avg Rainfall mm,0.0046780254
+80,pressure trend sin,0.0046761488
+81,Mean sea level pressure Hpa lag: 3,0.004672421
+82,24 hr rolling avg wind_sin,0.0046544275
+83,dewpoint (degC) lag: 6,0.004652833
+84,Mean Relative Humidity percent lag: 1,0.0046459376
+85,Rainfall_manukau_heads_rain lag: 2,0.0046285735
+86,Mean sea level pressure Hpa lag: 24,0.0046087103
+87,Speed_albany_wind lag: 2,0.0045941263
+88,24 hr rolling avg Speed_albany_wind,0.0045823785
+89,months cos,0.0045673028
+90,12 hr rolling avg wind_sin,0.0045624515
+91,24 hr rolling avg Speed_motat_wind,0.0045623262
+92,12 hr rolling avg Sea_level_pressure_motat_pressure,0.0045537795
+93,24 hr rolling avg Mean Relative Humidity percent,0.0045510475
+94,Speed_motat_wind lag: 24,0.004544668
+95,Mean sea level pressure Hpa lag: 12,0.0045436323
+96,wind_sin lag: 2,0.004538755
+97,wind_sin,0.004522738
+98,wind_sin lag: 24,0.0045191376
+99,cloudiness lag: 3,0.004496144
+100,P_grad_mang_motat,0.004492959
+101,Speed m/s,0.00448668
+102,Sunshine hrs lag: 24,0.004484374
+103,Sea_level_pressure_motat_pressure lag: 6,0.004481102
+104,days sin,0.004468871
+105,Rainfall mm lag: 2,0.0044590705
+106,cloudiness lag: 2,0.004429752
+107,24 hr rolling avg Speed_manukau_heads_wind,0.0044296635
+108,hour of day cos,0.004421305
+109,Sunshine hrs lag: 6,0.0044173286
+110,12 hr rolling avg Speed_motat_wind,0.004414856
+111,Mean Relative Humidity percent lag: 3,0.004412403
+112,6 hr rolling avg dewpoint (degC),0.0043818937
+113,12 hr rolling avg wind_cos,0.004372257
+114,Speed_manukau_heads_wind lag: 3,0.0043693194
+115,3 hr rolling avg Speed_albany_wind,0.0043636435
+116,Rainfall mm lag: 3,0.0043635494
+117,3 hr rolling avg Speed_manukau_heads_wind,0.0043551675
+118,3 hr rolling avg wind_sin,0.0043502366
+119,24 hr rolling avg dewpoint (degC),0.004341049
+120,6 hr rolling avg Sunshine hrs,0.0043381965
+121,12 hr rolling avg cloudiness,0.0043370086
+122,cloudiness lag: 24,0.0043349327
+123,Speed_manukau_heads_wind lag: 12,0.0043250644
+124,wind_cos lag: 3,0.004321674
+125,12 hr rolling avg Speed_manukau_heads_wind,0.0043154126
+126,Rainfall mm lag: 12,0.0043056104
+127,Speed_albany_wind lag: 12,0.004301199
+128,dewpoint (degC) lag: 24,0.0042987964
+129,24 hr rolling avg Rainfall_albany_rain,0.0042931214
+130,6 hr rolling avg Speed_motat_wind,0.004285751
+131,Mean Relative Humidity percent lag: 6,0.004265631
+132,Rainfall mm lag: 24,0.0042582457
+133,dewpoint (degC),0.0042382833
+134,3 hr rolling avg Sea_level_pressure_motat_pressure,0.004229657
+135,Sea_level_pressure_manukau_heads_pressure lag: 12,0.0042238673
+136,Sea_level_pressure_motat_pressure lag: 24,0.004217833
+137,P_grad_mang_alb_t,0.0041934387
+138,wind_sin lag: 12,0.0041932696
+139,Rainfall_albany_rain lag: 6,0.004191035
+140,6 hr rolling avg Mean Relative Humidity percent,0.00417158
+141,dewpoint (degC) lag: 2,0.004167976
+142,6 hr rolling avg Speed_manukau_heads_wind,0.0041665873
+143,dewpoint (degC) lag: 3,0.004163417
+144,6 hr rolling avg wind_cos,0.004157016
+145,Rainfall_albany_rain lag: 3,0.004151811
+146,24 hr rolling avg Rainfall_motat_rain,0.004149304
+147,Sea_level_pressure_albany_pressure lag: 1,0.004141261
+148,Rainfall_motat_rain lag: 2,0.0041403966
+149,Sea_level_pressure_albany_pressure lag: 3,0.0041345316
+150,3 hr rolling avg Rainfall_manukau_heads_rain,0.0041312273
+151,Sea_level_pressure_manukau_heads_pressure lag: 6,0.004127177
+152,12 hr rolling avg Rainfall_motat_rain,0.0041218367
+153,wind_cos lag: 24,0.0041165003
+154,cloudiness lag: 1,0.0041116644
+155,6 hr rolling avg Rainfall_manukau_heads_rain,0.004110364
+156,pressure trend cos,0.004096172
+157,cloudiness lag: 6,0.0040954975
+158,P_grad_mang_alb,0.0040906146
+159,Mean Relative Humidity percent lag: 24,0.004055947
+160,Rainfall_manukau_heads_rain lag: 3,0.004044215
+161,Speed_albany_wind lag: 6,0.0040409924
+162,24 hr rolling avg Sunshine hrs,0.0040405123
+163,Speed_manukau_heads_wind lag: 6,0.004027461
+164,wind_sin lag: 1,0.0040262286
+165,Sea_level_pressure_manukau_heads_pressure lag: 3,0.004024832
+166,Speed_motat_wind lag: 3,0.004022932
+167,6 hr rolling avg Rainfall_albany_rain,0.00401845
+168,Rainfall mm lag: 6,0.0040092855
+169,Speed_motat_wind lag: 6,0.00400676
+170,12 hr rolling avg Sunshine hrs,0.0039949166
+171,24 hr rolling avg Rainfall mm,0.0039676535
+172,wind_sin lag: 3,0.0039439327
+173,6 hr rolling avg cloudiness,0.0039373557
+174,Rainfall_motat_rain lag: 24,0.003921487
+175,12 hr rolling avg Rainfall_albany_rain,0.0039149118
+176,3 hr rolling avg Mean sea level pressure Hpa,0.003909946
+177,Rainfall_albany_rain lag: 2,0.003881622
+178,Sunshine hrs lag: 3,0.0038753818
+179,Sea_level_pressure_manukau_heads_pressure lag: 2,0.0038744868
+180,Rainfall_manukau_heads_rain lag: 12,0.0038698527
+181,Rainfall_manukau_heads_rain lag: 6,0.0038662525
+182,cloudiness lag: 12,0.0038593614
+183,Rainfall_manukau_heads_rain lag: 24,0.0038466637
+184,Mean Relative Humidity percent lag: 2,0.0038412889
+185,Mean Relative Humidity percent lag: 12,0.0037729873
+186,12 hr rolling avg Rainfall_manukau_heads_rain,0.0037371337
+187,Mean sea level pressure Hpa lag: 1,0.0036823442
+188,hour of day sin,0.0036698584
+189,Mean sea level pressure Hpa lag: 6,0.0036299075
+190,Speed_manukau_heads_wind,0.0036264642
+191,24 hr rolling avg cloudiness,0.0036144853
+192,Rainfall_motat_rain lag: 3,0.0035719138
+193,Seasons_Winter,0.003561176
+194,Rainfall_motat_rain lag: 6,0.0035211013
+195,Rainfall_albany_rain lag: 24,0.0035086484
+196,P_grad_mang_man_t,0.0034870629
+197,Seasons_Summer,0.0
+198,Seasons_Spring,0.0
+199,Seasons_Autumn,0.0
+200,cloudiness,0.0
+201,Sunshine hrs lag: 1,0.0
+202,Sunshine hrs lag: 12,0.0
+203,24 hr rolling avg Sea_level_pressure_manukau_heads_pressure,0.0
+204,3 hr rolling avg Sea_level_pressure_manukau_heads_pressure,0.0
+205,Rainfall_motat_rain lag: 12,0.0
+206,Rainfall_albany_rain lag: 12,0.0
+207,Sea_level_pressure_motat_pressure lag: 1,0.0
+208,Sea_level_pressure_manukau_heads_pressure lag: 1,0.0
+209,3 hr rolling avg Sea_level_pressure_albany_pressure,0.0
+210,Sunshine hrs,0.0
