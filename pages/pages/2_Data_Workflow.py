@@ -18,8 +18,8 @@ import plotly.express as px
 st.write("# Data Workflow Demo")
 st.subheader(body=" - How I got to my final predictions",divider="rainbow")
 
-mangere_df = pd.read_csv("csv_mangere_for_dash")
-feat_eng_mangere = pd.read_csv("feat_eng_df.csv")
+mangere_df = pd.read_csv("pages/pages/csv_mangere_for_dash")
+feat_eng_mangere = pd.read_csv("pages/pages/feat_eng_df.csv")
 
 st.subheader("Feature Engineering: Dataframe Comparisons (uses Mangere as example)")
 before_tab, after_tab = st.tabs(["Before", "After"])
