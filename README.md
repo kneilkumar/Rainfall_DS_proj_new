@@ -8,4 +8,4 @@ auckland_rain_map.html is the map where the rain intensity is shown over time ac
 
 also the streamlit works fine on your own computer, but hosting it online can cause a lot of performance issues, especially if you move too fast with the app e.g. trying to click stuff before it loads in fully or while the ML models are runnning.
 
-https://rainfalldsprojnew-5r9cbjx4gxewdx9zofre8b.streamlit.app/  <--- link to streamlit dash
+https://rainfalldsprojnew-yfcotzzubq66grwsrvqvuj.streamlit.app/Data_Workflow  <--- link to streamlit dash
