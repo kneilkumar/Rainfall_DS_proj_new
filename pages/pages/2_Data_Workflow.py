@@ -18,8 +18,8 @@ import plotly.express as px
 st.write("# Data Workflow Demo")
 st.subheader(body=" - How I got to my final predictions",divider="rainbow")
 
-mangere_df = pd.read_csv("pages/pages/csv_mangere_for_dash")
-feat_eng_mangere = pd.read_csv("pages/pages/feat_eng_df.csv")
+mangere_df = pd.read_csv("csv_mangere_for_dash")
+feat_eng_mangere = pd.read_csv("feat_eng_df.csv")
 
 st.subheader("Feature Engineering: Dataframe Comparisons (uses Mangere as example)")
 before_tab, after_tab = st.tabs(["Before", "After"])
@@ -46,7 +46,7 @@ pressure, wind_cos, presscos = st.tabs(["Pressure", "Wind", "Pressure x Wind (Co
 man_sub = mangere_df.iloc[6058:7825]
 temp = man_sub["Mean Temperature [Deg C]"]
 hum = man_sub["Mean Relative Humidity [percent]"]
-f_e_sub = feat_eng_mangere.iloc[6058:7825]
+f_e_sub = feat_eng_mangere
 
 temphum = f_e_sub["temphum"]
 rain = f_e_sub["Rainfall [mm]"]
@@ -168,14 +168,3 @@ st.dataframe(r2)
 st.markdown("The mean MAE is a kind performance metric which show us the error in our predictions.  The MAE"
             " is the how off we are on average, and we generally want to try minimise this value as much as possible."
             " From the results you can see that some transforms are more appropriate for some models compared to others.")
-
-
-
-
-
-
-
-
-
-
-
